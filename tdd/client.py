@@ -22,10 +22,11 @@ class TDDClient(requests.Session):
     """
     base_url = "https://apisb.thetradedesk.com/v3/"
 
-    def __init__(self, login, password):
+    def __init__(self, login, password, token_expires_in=90):
         super().__init__()
         self._login = login
         self._password = password
+        self.token_expires_in = token_expires_in
 
         self._token = None
 
@@ -36,16 +37,19 @@ class TDDClient(requests.Session):
     def token(self):
         """Get or reuse token"""
         if self._token is None:
-            self._get_token()
+            self._refresh_token(self.token_expires_in)
         return self._token
-
 
     @token.setter
     def token(self, new_token):
+        """Set access token + update auth headers"""
         logging.debug("Setting new access token")
         self._token = new_token
 
-    def _get_token(self, expires_in=90):
+        logging.debug("Updating TTD-Auth header")
+        self.headers.update({"TTD-Auth": new_token})
+
+    def _refresh_token(self, expires_in=90):
 
         logging.debug("Getting new access token")
         data = {
@@ -66,3 +70,32 @@ class TDDClient(requests.Session):
                 raise
 
         self.token = resp.json()["Token"]
+
+    def _request(self, method, url, *args, **kwargs):
+        """Do authenticated HTTP request
+
+        Implements retry on expired access token
+
+        Returns:
+            requests.Response object
+        """
+
+        try:
+            resp = self.request(method, url, *args, **kwargs)
+            resp.raise_for_status()
+        except requests.HTTPError as err:
+            if err.response.status_code == 403:
+                # token expired
+                logging.debug("Token expired or invalid, trying again")
+                self._refresh_token()
+                try:
+                    resp2 = self.request(method, url, *args, **kwargs)
+                    resp2.raise_for_status()
+                except requests.HTTPError as err:
+                    logging.error(err.response.text)
+                    raise
+                else:
+                    return resp2
+            else:
+                logging.error(err.response.text)
+                raise

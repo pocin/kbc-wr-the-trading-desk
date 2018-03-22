@@ -1,15 +1,16 @@
-import pytest
 import os
+import logging
 
+import pytest
 from tdd.client import TDDClient
 import tdd.exceptions
 
-@pytest.fixture(scope="module")
-def credentials():
-    return {
-        "login": os.environ['TDD_USERNAME'],
-        "password": os.environ['TDD_PASSWORD']
-    }
+LOGIN = os.environ['TDD_USERNAME']
+PASSWORD = os.environ['TDD_PASSWORD']
+
+# @pytest.fixture(scope='module')
+# def client():
+#     return TDDClient(login=LOGIN, password=PASSWORD)
 
 def test_client_raises_config_error_on_wrong_credentials():
     client = TDDClient(login='foo', password="Nonexistent")
@@ -18,8 +19,8 @@ def test_client_raises_config_error_on_wrong_credentials():
 
     assert "invalid credentials" in str(excinfo.value).lower()
 
-def test_client_can_authenticate(credentials):
-    client = TDDClient(**credentials)
+def test_client_can_authenticate():
+    client = TDDClient(login=LOGIN, password=PASSWORD)
     old_token = client.token
     assert old_token is not None
 
@@ -43,6 +44,25 @@ def test_building_urls():
     for endpoint, expected in tests:
         assert client._build_url(endpoint) == expected
 
-# def test_client_can_be_created_with_token():
-#     client = TDDClient(token="foobar")
-#     assert client.token = "foobar"
+def test_client_fails_on_unauthorized_resource():
+    endpoint = "category/industrycategories"
+    client = TDDClient(login="non", password="existing")
+    client.token = "INVALID"
+
+    # this makes an authorized GET without retry on failed refresh_token
+    resp = client.get(client._build_url(endpoint))
+    assert resp.status_code == 403
+    assert "auth token is not valid or has expired" in resp.json()["Message"]
+
+def test_client_refreshes_token_after_403_request(caplog):
+    endpoint = "category/industrycategories"
+    client = TDDClient(login=LOGIN, password=PASSWORD)
+    client.token = "INVALID"
+
+    with caplog.at_level(logging.DEBUG):
+        resp = client._request("GET", client._build_url(endpoint))
+
+    assert "Token expired or invalid, trying again" in caplog.text
+    # eventually succeeds after 1st try
+    assert client.token is not None and client.token != "INVALID"
+    assert resp.status_code == 200
