@@ -58,7 +58,7 @@ class TDDClient(requests.Session):
             "TokenExpirationInMinutes": expires_in
         }
 
-        resp = self.post(self._build_url('authentication'), json=data)
+        resp = self.request("POST", self._build_url('authentication'), json=data)
         try:
             resp.raise_for_status()
         except requests.HTTPError as err:
@@ -99,3 +99,38 @@ class TDDClient(requests.Session):
             else:
                 logging.error(err.response.text)
                 raise
+
+    def get(self, endpoint, *args, **kwargs):
+        """Make an authenticated get request against the API endpoint
+
+        Args:
+            standard requests.get() parameters
+
+        Returns:
+            json response
+        """
+        return self._request("GET", self._build_url(endpoint), *args, **kwargs).json()
+
+
+    def post(self, endpoint, *args, **kwargs):
+        """Make an authenticated POST request against the API endpoint
+
+        Args:
+            standard requests.post() parameters
+
+        Returns:
+            json response
+        """
+        return self._request("POST", self._build_url(endpoint), *args, **kwargs).json()
+
+    def put(self, endpoint, *args, **kwargs):
+        """Make an authenticated POST request against the API endpoint
+
+        Args:
+            standard requests.put() parameters
+
+        Returns:
+            json response
+        """
+
+        return self._request("PUT", self._build_url(endpoint), *args, **kwargs).json()

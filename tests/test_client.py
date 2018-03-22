@@ -50,7 +50,8 @@ def test_client_fails_on_unauthorized_resource():
     client.token = "INVALID"
 
     # this makes an authorized GET without retry on failed refresh_token
-    resp = client.get(client._build_url(endpoint))
+    # we use request("GET") because client.get is overriden
+    resp = client.request("GET", client._build_url(endpoint))
     assert resp.status_code == 403
     assert "auth token is not valid or has expired" in resp.json()["Message"]
 
@@ -66,3 +67,9 @@ def test_client_refreshes_token_after_403_request(caplog):
     # eventually succeeds after 1st try
     assert client.token is not None and client.token != "INVALID"
     assert resp.status_code == 200
+
+def test_making_client_get_request_succeeds():
+    endpoint = "category/industrycategories"
+    client = TDDClient(login=LOGIN, password=PASSWORD)
+    data = client.get(endpoint)
+    assert isinstance(data, dict)
