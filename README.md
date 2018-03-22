@@ -1,5 +1,8 @@
 # The trading desk writer
 
+# Requirements
+
+
 ## Run locally
 
 ```
