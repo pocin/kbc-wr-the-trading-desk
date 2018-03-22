@@ -20,10 +20,12 @@ class TDDClient(requests.Session):
     - reuses underlying TCP connection for better performance
 
     """
-    base_url = "https://apisb.thetradedesk.com/v3/"
 
-    def __init__(self, login, password, token_expires_in=90):
+    def __init__(self, login, password,
+                 token_expires_in=90,
+                 base_url="https://apisb.thetradedesk.com/v3/"):
         super().__init__()
+        self.base_url = "https://apisb.thetradedesk.com/v3/"
         self._login = login
         self._password = password
         self.token_expires_in = token_expires_in
