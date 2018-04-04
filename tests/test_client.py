@@ -2,7 +2,7 @@ import os
 import logging
 
 import pytest
-from tdd.client import TDDClient
+from tdd.client import BaseTDDClient
 import tdd.exceptions
 
 LOGIN = os.environ['TDD_USERNAME']
@@ -13,14 +13,14 @@ PASSWORD = os.environ['TDD_PASSWORD']
 #     return TDDClient(login=LOGIN, password=PASSWORD)
 
 def test_client_raises_config_error_on_wrong_credentials():
-    client = TDDClient(login='foo', password="Nonexistent")
+    client = BaseTDDClient(login='foo', password="Nonexistent")
     with pytest.raises(tdd.exceptions.ConfigError) as excinfo:
         client.token
 
     assert "invalid credentials" in str(excinfo.value).lower()
 
 def test_client_can_authenticate():
-    client = TDDClient(login=LOGIN, password=PASSWORD)
+    client = BaseTDDClient(login=LOGIN, password=PASSWORD)
     old_token = client.token
     assert old_token is not None
 
@@ -34,7 +34,7 @@ def test_client_can_authenticate():
     assert new_token != old_token and new_token is not None
 
 def test_building_urls():
-    client = TDDClient("foo", "bar")
+    client = BaseTDDClient("foo", "bar")
     client.base_url = "api.com/v3/"
     tests = [
         ("/campaign/get", "api.com/v3/campaign/get"),
@@ -46,7 +46,7 @@ def test_building_urls():
 
 def test_client_fails_on_unauthorized_resource():
     endpoint = "category/industrycategories"
-    client = TDDClient(login="non", password="existing")
+    client = BaseTDDClient(login="non", password="existing")
     client.token = "INVALID"
 
     # this makes an authorized GET without retry on failed refresh_token
@@ -57,7 +57,7 @@ def test_client_fails_on_unauthorized_resource():
 
 def test_client_refreshes_token_after_403_request(caplog):
     endpoint = "category/industrycategories"
-    client = TDDClient(login=LOGIN, password=PASSWORD)
+    client = BaseTDDClient(login=LOGIN, password=PASSWORD)
     client.token = "INVALID"
 
     with caplog.at_level(logging.DEBUG):
@@ -70,6 +70,6 @@ def test_client_refreshes_token_after_403_request(caplog):
 
 def test_making_client_get_request_succeeds():
     endpoint = "category/industrycategories"
-    client = TDDClient(login=LOGIN, password=PASSWORD)
+    client = BaseTDDClient(login=LOGIN, password=PASSWORD)
     data = client.get(endpoint)
     assert isinstance(data, dict)

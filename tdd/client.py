@@ -10,7 +10,7 @@ import requests
 
 from tdd.exceptions import ConfigError
 
-class TDDClient(requests.Session):
+class BaseTDDClient(requests.Session):
     """
     The TDD Client can
     - authenticate with username/password and get a token.
