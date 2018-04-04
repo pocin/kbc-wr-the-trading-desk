@@ -5,8 +5,9 @@ communicate
 """
 import logging
 from urllib.parse import urljoin
-
+from io import StringIO
 import requests
+import csv
 
 from tdd.exceptions import ConfigError
 
@@ -14,10 +15,18 @@ class BaseTDDClient(requests.Session):
     """
     The TDD Client can
     - authenticate with username/password and get a token.
-    - [TODO] cache existing tokens and seamlessly get new ones
-    - [TODO] perform authenticated requests
+    -  cache existing tokens and seamlessly get new ones
+    -  perform authenticated requests
     - [TODO] implements retry policy on 500
     - reuses underlying TCP connection for better performance
+
+
+    The authentication headers are automatically used for each request,
+    they are updated whenever a access_token is set
+
+
+    Do not use this client for any nonthetradedesk urls otherwise your
+    token will be exposed
 
     """
 
@@ -25,7 +34,7 @@ class BaseTDDClient(requests.Session):
                  token_expires_in=90,
                  base_url="https://apisb.thetradedesk.com/v3/"):
         super().__init__()
-        self.base_url = "https://apisb.thetradedesk.com/v3/"
+        self.base_url = base_url
         self._login = login
         self._password = password
         self.token_expires_in = token_expires_in
@@ -82,6 +91,7 @@ class BaseTDDClient(requests.Session):
             requests.Response object
         """
 
+        # auth headers are set when requesting token
         resp = self.request(method, url, *args, **kwargs)
         try:
             resp.raise_for_status()
@@ -138,3 +148,69 @@ class BaseTDDClient(requests.Session):
         """
 
         return self._request("PUT", self._build_url(endpoint), *args, **kwargs).json()
+
+class TDDClient(BaseTDDClient):
+    """
+    Contains shortcut methods for some endpoints (create_campaign, etc...)
+
+    But still doesn't contain any kbc related logic.
+    """
+    def create_campaign(self, data):
+        return self.post('/campaign', json=data)
+
+    def create_adgroup(self, data):
+        return self.post('/adgroup')
+
+    def update_adgroup(self, data):
+        return self.post('/adgroup')
+
+    def get_sitelist(self, id_):
+        return self.get('/sitelist/{}'.format(id_))
+
+class KBCTDDClient(TDDClient):
+    """
+    Client tailored for Keboola Connection
+
+    Has helper methods for logging requests directly into csv
+    """
+    def __init__(self, login, password, path_csv_log,
+                 token_expires_in=90,
+                 base_url="https://apisb.thetradedesk.com/v3/"):
+        """
+        Args:
+            path_log: "/data/out/tables/tdd_writer_log.csv" will be a valid csv with all api calls logged
+        """
+        super().__init__(login, password, token_expires_in=token_expires_in, base_url=base_url)
+        self.path_csv_log = path_csv_log
+        self.csv_logger = self.init_logging(path_csv_log)
+        # don't know how to hook this up to a context manager (we already have one)
+
+    def init_logging(self, log_path):
+        csv_logger = logging.getLogger(__name__)
+        handler = logging.FileHandler(log_path, 'w')
+        self.csv_log_header = ["timestamp", "http_status", "response"]
+        handler.setFormatter(
+            logging.Formatter('%(asctime)s,%(resp_status)s,%(message)s',
+                              datefmt='%Y-%m-%dT%H:%M:%S'))
+        csv_logger.addHandler(handler)
+        csv_logger.setLevel(logging.INFO)
+        return csv_logger
+
+    @staticmethod
+    def _csv_quote(text):
+        buff = StringIO()
+        wr = csv.writer(buff)
+        wr.writerow([text])
+        return buff.getvalue().strip()
+
+    def log_response(self, resp):
+        """csv-escape given text and write to the csv log
+
+        """
+        self.csv_logger.info(self._csv_quote(resp.text),
+                             extra={'resp_status':resp.status_code})
+
+    def _request(self, method, url, *args, **kwargs):
+        resp = super()._request(method, url, *args, **kwargs)
+        self.log_response(resp)
+        return resp.json()
