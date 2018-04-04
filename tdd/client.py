@@ -82,8 +82,8 @@ class BaseTDDClient(requests.Session):
             requests.Response object
         """
 
+        resp = self.request(method, url, *args, **kwargs)
         try:
-            resp = self.request(method, url, *args, **kwargs)
             resp.raise_for_status()
         except requests.HTTPError as err:
             if err.response.status_code == 403:
@@ -101,6 +101,8 @@ class BaseTDDClient(requests.Session):
             else:
                 logging.error(err.response.text)
                 raise
+        else:
+            return resp
 
     def get(self, endpoint, *args, **kwargs):
         """Make an authenticated get request against the API endpoint

@@ -68,6 +68,10 @@ def test_client_refreshes_token_after_403_request(caplog):
     assert client.token is not None and client.token != "INVALID"
     assert resp.status_code == 200
 
+    # next request reuses existing token
+    resp2 = client._request("GET", client._build_url(endpoint))
+    assert resp2.status_code == 200
+
 def test_making_client_get_request_succeeds():
     endpoint = "category/industrycategories"
     client = BaseTDDClient(login=LOGIN, password=PASSWORD)
