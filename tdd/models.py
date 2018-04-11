@@ -57,117 +57,15 @@ def validate_json(obj, schema):
     """
     return schema(obj)
 
-class BaseModel(dict):
 
-    _schema_path = None
 
-    def __init__(self):
-        super().__init__(self._from_file(self._schema_path))
-
-    def _from_file(self, io):
-        """update current schema from file
-
-        Args:
-            io either file-like object or (str) /path/to/schema.json
-        """
-        if not hasattr(io, 'read'):
-            with open(io, 'r') as fin:
-                data = json.load(fin)
-        elif hasattr(io, 'read'):
-            data = json.load(io)
-        else:
-            raise ValueError(
-                "io Must be path/to/schema.json or filelike object")
-
-        return data
-
-    @property
-    def schema_path(self):
-        return type(self)._schema_path
-
-    @schema_path.setter
-    def schema_path(self, path):
-        self._schema_path = path
 
 
 
 reusable_dtypes = {
     "_money": {
-        "type": "object",
-        "properties": {
-            "Amount": {
-                "type": "number"
-            },
-            "CurrencyCode": {
-                "type": "string",
-                "enum": ["USD"]
-            }
-        }
     }
 }
 
-campaign_schema = {
-    "$schema": "ttp://json-schema.org/schema#",
-    "definitions": {
-        "_money": reusable_dtypes['_money']
     },
-    "required": ["Budget", "StartDate", "EndDate", "DailyBudget"],
-    "type": "object",
-    "properties": {
-        "Budget": {
-            "$ref": "#/definitions/_money"
-        },
-        "StartDate": {
-            "format": "date-time",
-            "description": "2018-04-10T11:37:46.4780952+00:00",
-            "type": "string"
-        },
-        "EndDate": {
-            "format": "date-time",
-            "description": "2018-04-10T11:37:46.4780952+00:00",
-            "type": "string"
-        },
-        "BudgetInImpressions": {
-            "anyOf": [{
-                "type": "number"
-            }, {
-                "type": "null"
-            }]
-        },
-        "DailyBudgetInImpressions": {
-            "anyOf": [{
-                "type": "number"
-            }, {
-                "type": "null"
-            }]
-        },
-        "DailyBudget": {
-            "$ref": "#/definitions/_money"
-        },
-    },
-}
-
-create_adgroup = {
-    "$schema": "ttp://json-schema.org/schema#",
-    "type": "object",
-    "required": ["CampaignID", "AdGroupName", "IndustryCategoryID"],
-    "properties": {
-        "CampaignID": {"type": "string"},
-        "IndustryCategoryID": {"type": "number"},
-        "RTBAdGroupAttributes": {
-            "type": "object",
-            "properties": {
-                "BudgetSettings": {
-                    "type": "object",
-                    "properties": {
-                        "Budget": reusable_dtypes['_money'],
-                        "BudgetInImpressions": {"type": "number"},
-                        "DailyBudget": reusable_dtypes['_money'],
-                        "DailyBudgetInImpressions": {"type": "number"}}
-                },
-                "BaseBidCPM": {"type": "string"},
-                "MaxBidCPM": {"type": "string"}
-            }
         }
-    }
-}
