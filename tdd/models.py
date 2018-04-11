@@ -5,7 +5,9 @@ use jsonschema to validate data against the model schema
 """
 import json
 import csv
-from voluptuous import Schema, Coerce
+import voluptuous as vp
+from collections import defaultdict
+
 
 def csv_to_json(io):
     """Convert input csv into [possibly] nested json
@@ -25,8 +27,25 @@ def csv_to_json(io):
             nested_line = _nest_json(line)
             yield nested_line
 
+
 def _nest_json(obj):
-    return obj
+    """nesting json into 1 level
+    {"foo__bar": 42} -> {"foo":{"bar":42}}
+    but not (ATM)
+    {"foo__bar_baz__qux": 42} -> {"foo":{"bar_baz":{"qux":42}}}
+
+    """
+    new = defaultdict(dict)
+    for key, val in obj.items():
+        if '__' in key:
+            # do we want to go infinitely deep?
+            lvl1, lvl2 = key.split('__', maxsplit=1)
+            new[lvl1][lvl2] = val
+        else:
+            # just copy this, no nesting needed
+            new[key] = val
+    return new
+
 
 def validate_json(obj, schema):
     """validate and coerce given json object according to given voluptuous.Schema

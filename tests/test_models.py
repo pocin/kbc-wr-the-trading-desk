@@ -28,3 +28,29 @@ Ahoj,666""")
     for i, obj in enumerate(potentially_invalid_json):
         validated_and_coerced = tdd.models.validate_json(obj, schema)
         assert validated_and_coerced == expected[i]
+
+
+def test_nesting_json_no_nesting_needed():
+    inp = {
+        'col1': 42,
+        'col2': "foo"
+    }
+    # expected
+    exp = {
+        'col1': 42,
+        'col2': "foo"
+    }
+    assert exp == tdd.models._nest_json(inp)
+
+
+def test_nesting_json_single_level():
+    inp = {
+        'col1__nested': 42,
+        'col2': "foo"
+    }
+    # expected
+    exp = {
+        'col1': {'nested': 42},
+        'col2': "foo"
+    }
+    assert exp == tdd.models._nest_json(inp)
