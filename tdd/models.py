@@ -58,14 +58,65 @@ def validate_json(obj, schema):
     return schema(obj)
 
 
+def validate_input_csv(path_csv, schema):
+    """Serialize csv to json, coerce dtypes and validate everything is ok
 
+    after the first pass is ok, we can actually use the output to
+    make requests
+    Args:
+        path_csv(str): path/to/input/csv
+        schema: instance of (voluptuous.Schema) to which the data in the
+            input csv must conform
 
+    Returns: a generator yielding json objects (serialized from input csv)
+    """
+    json_lines = csv_to_json(path_csv)
+    for line in json_lines:
+        yield schema(line)
 
 
 reusable_dtypes = {
     "_money": {
+        "Amount": vp.Coerce(float),
+        "CurrencyCode": "USD"
     }
 }
 
+# "description": "2018-04-10T11:37:46.4780952+00:00",
+CreateCampaignSchema = vp.Schema(
+    {
+        "StartDate": str,
+        "EndDate": str,
+        "Budget": reusable_dtypes['_money'],
+        "DailyBudget": reusable_dtypes['_money'],
+        vp.Optional("BudgetInImpressions"): vp.Any(None, vp.Coerce(int)),
+        vp.Optional("DailyBudgetInImpressions"): vp.Any(None, vp.Coerce(int))
     },
+    extra=True,
+    required=True)
+
+CreateAdGroupSchema = vp.Schema(
+    {
+        "AdGroupName": str,
+        vp.Optional("CampaignID"): str,
+        "IndustryCategoryID": vp.Coerce(int),
+        "IsEnabled": bool,
+        "RTBAttributes": {
+            "RTBAdGroupAttributes": vp.Schema(
+                {
+                    "BudgetSettings": vp.Schema(
+                        {
+                            "Budget": reusable_dtypes['_money'],
+                            "BudgetInImpressions": vp.Coerce(int),
+                            "DailyBudget": reusable_dtypes['_money'],
+                            "DailyBudgetInImpressions": vp.Coerce(int)
+                        },
+                        extra=vp.ALLOW_EXTRA,
+                        required=False),
+                    "BaseBidCPM": reusable_dtypes['_money'],
+                    "MaxBidCPM": reusable_dtypes['_money']
+                })
         }
+    },
+    extra=vp.ALLOW_EXTRA,
+    required=True)
