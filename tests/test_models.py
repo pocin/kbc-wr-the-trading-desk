@@ -2,88 +2,70 @@ import pytest
 
 from voluptuous import Schema, Coerce, Invalid
 import tdd.models
+from tdd.exceptions import TDDConfigError
 
-def test_validating_csv_completely(tmpdir):
+def _prepare_incsv(tmpdir, csv_contents):
+
     csv_infile = tmpdir.join('input.csv')
-    csv_infile.write("""foo,count
-"Robin",42
-Ahoj,666""")
+    csv_infile.write(csv_contents)
+    return csv_infile
 
-    expected = [{
-        "foo": "Robin",
-        "count": 42
-    },{
-        "foo": "Ahoj",
-        "count": 666
-    }]
-    schema = Schema({
-        "foo": str,
-        "count": Coerce(int)
-        })
 
-    validated_and_coerced = tdd.models.validate_input_csv(csv_infile, schema)
+def test_parsing_csv_raises_on_missing_column(tmpdir):
+    csv_infile = _prepare_incsv(
+        tmpdir,
+        """id,missing,value
+1,"Robin",42
+1,Ahoj,666""")
+    with pytest.raises(TDDConfigError):
+        list(tdd.models.csv_to_json(csv_infile.strpath, id_column='id'))
+
+def test_parsing_and_validating_csv_no_id_column(tmpdir):
+    csv_infile = tmpdir.join('input.csv')
+    csv_infile.write("""id,path,value
+1,"Robin",42
+1,Ahoj,666""")
+
+    expected = [{"Robin": 42, "id": "1", "Ahoj": "666" }]
+    schema = Schema({"id": str,
+                     "Robin": Coerce(int),
+                     "Ahoj": str})
+
+    validated_and_coerced = tdd.models.validate_input_csv(csv_infile,
+                                                          schema,
+                                                          id_column='id',
+                                                          include_id_column=True)
     assert list(validated_and_coerced) == expected
 
 
-def test_validating_csv_completely_fails_on_invalid_input(tmpdir):
-    csv_infile = tmpdir.join('input.csv')
-    csv_infile.write("""foo,count
-"Robin",42
-Ahoj,xxxx""")
+def test_validating_csv_completely_fails_on_invalid_input():
 
-    sch = Schema({
-        "foo": str,
-        "count": Coerce(int)
-        })
+    obj = {"foo": "hoj", "count": "THIS SHULD FAIL"}
+    sch = Schema({"foo": str, "count": Coerce(int)})
 
     with pytest.raises(Invalid):
-        list(tdd.models.validate_input_csv(csv_infile, sch))
+        tdd.models.validate_json(obj, sch)
+
 
 def test_serialize_csv_to_json(tmpdir):
-
     expected = [{
-        "foo": "Robin",
-        "count": "42"
-    },{
-        "foo": "Ahoj",
-        "count": "666"
-    }]
-
-    csv_infile = tmpdir.join('input.csv')
-    csv_infile.write("""foo,count
-"Robin",42
-Ahoj,666""")
-
-    schema = Schema({
-        "foo": str,
-        "count": Coerce(int)
-        })
-
-    serialized = tdd.models.csv_to_json(csv_infile.strpath)
-    assert list(serialized) == expected
-
-
-def test_nesting_json_no_nesting_needed():
-    inp = {
-        'col1': 42,
-        'col2': "foo"
+        "campaign_id": "campA",
+        "campaignName": "ucelovka proti babisovi",
+        "budget": {
+            "Cost": "666",
+            "Currency": "USD"
+        }
     }
-    # expected
-    exp = {
-        'col1': 42,
-        'col2': "foo"
-    }
-    assert exp == tdd.models._nest_json(inp)
+    ]
 
+    contents = '''campaign_id,path,value
+campA,campaignName,"ucelovka proti babisovi"
+campA,budget__Cost,666
+campA,budget__Currency,USD'''
 
-def test_nesting_json_single_level():
-    inp = {
-        'col1__nested': 42,
-        'col2': "foo"
-    }
-    # expected
-    exp = {
-        'col1': {'nested': 42},
-        'col2': "foo"
-    }
-    assert exp == tdd.models._nest_json(inp)
+    csv_infile = _prepare_incsv(tmpdir, contents)
+    serialized = list(tdd.models.csv_to_json(
+        csv_infile.strpath,
+        id_column='campaign_id',
+        include_id_column=True))
+    assert expected[0] == serialized[0]

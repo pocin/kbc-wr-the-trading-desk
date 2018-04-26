@@ -5,46 +5,52 @@ use jsonschema to validate data against the model schema
 """
 import json
 import csv
+from functools import reduce
+from operator import itemgetter
+from itertools import groupby
 import voluptuous as vp
 from collections import defaultdict
+import jsontangle
+import logging
+from tdd.exceptions import TDDConfigError
 
 
-def csv_to_json(io):
+def csv_to_json(io, id_column, include_id_column=True):
     """Convert input csv into [possibly] nested json
 
     No type checking or validation is done!
 
     the rules are:
     nesting separator is by __ (aka "the dunder")
-    foo__bar,baz  --> {"foo": {"bar": None}, "baz":None}
+    foo__bar,baz  --> {"foo": {"bar": "baz"}}
 
     Arguments:
         io: either /path/to/input.csv or filelike object
+        id_column (optional): column upon which the group by will be performed.
     """
+    logging.info("Parsing %s", io)
+    if id_column is None:
+        raise TDDConfigError("Must specify an id_column on which to perform group by")
+    else:
+        pk = itemgetter(id_column)
     with open(io, 'r') as fin:
         reader = csv.DictReader(fin)
-        for line in reader:
-            nested_line = _nest_json(line)
-            yield nested_line
-
-
-def _nest_json(obj):
-    """nesting json into 1 level
-    {"foo__bar": 42} -> {"foo":{"bar":42}}
-    but not (ATM)
-    {"foo__bar_baz__qux": 42} -> {"foo":{"bar_baz":{"qux":42}}}
-
-    """
-    new = defaultdict(dict)
-    for key, val in obj.items():
-        if '__' in key:
-            # do we want to go infinitely deep?
-            lvl1, lvl2 = key.split('__', maxsplit=1)
-            new[lvl1][lvl2] = val
-        else:
-            # just copy this, no nesting needed
-            new[key] = val
-    return new
+        REQUIRED_COLUMNS = ['path', id_column, 'value']
+        for col in REQUIRED_COLUMNS:
+            if col not in reader.fieldnames:
+                raise TDDConfigError("the file '{}' must include column '{}'".format(io, col))
+        rows = sorted(reader, key=pk)
+        for pk, values in groupby(rows, pk):
+            if include_id_column:
+                cleaned_values = ({id_column: row[id_column],
+                                   row['path']: row['value']}
+                                  for row
+                                  in values)
+            else:
+                cleaned_values = ({row['path']: row['value']}
+                                  for row
+                                  in values)
+            yield jsontangle.tangle(cleaned_values)
 
 
 def validate_json(obj, schema):
@@ -58,19 +64,22 @@ def validate_json(obj, schema):
     return schema(obj)
 
 
-def validate_input_csv(path_csv, schema):
+def validate_input_csv(path_csv, schema, id_column, include_id_column=False):
     """Serialize csv to json, coerce dtypes and validate everything is ok
 
     after the first pass is ok, we can actually use the output to
     make requests
     Args:
         path_csv(str): path/to/input/csv
+        primary_key(str): name of the primary key column to group by
         schema: instance of (voluptuous.Schema) to which the data in the
             input csv must conform
 
-    Returns: a generator yielding json objects (serialized from input csv)
+    Returns:
+        a generator yielding json objects (serialized from input csv)
+            validated and coerced according to the schema
     """
-    json_lines = csv_to_json(path_csv)
+    json_lines = csv_to_json(path_csv, id_column=id_column)
     for line in json_lines:
         yield schema(line)
 

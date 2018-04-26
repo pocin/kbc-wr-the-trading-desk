@@ -1,7 +1,7 @@
 class UserError(ValueError):
     """Raise whenever user makes a mistake (config) or malformed input data"""
 
-class ConfigError(UserError):
+class TDDConfigError(UserError):
     """Wrong config"""
 
 class TDDInternalError(Exception):

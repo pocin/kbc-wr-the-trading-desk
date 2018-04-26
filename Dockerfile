@@ -1,10 +1,11 @@
 FROM python:3.6-alpine
-RUN pip3 install --no-cache-dir --upgrade \
+RUN apk add --no-cache git && pip3 install --no-cache-dir --upgrade \
       pytest \
       flake8 \
       requests \
       voluptuous \
-      https://github.com/keboola/python-docker-application/tarball/master
+      https://github.com/keboola/python-docker-application/tarball/master \
+      git+https://github.com/pocin/jsontangle@0.2.1 && apk del git
 
 WORKDIR /code
 

@@ -14,7 +14,7 @@ PASSWORD = os.environ['TDD_PASSWORD']
 
 def test_client_raises_config_error_on_wrong_credentials():
     client = BaseTDDClient(login='foo', password="Nonexistent")
-    with pytest.raises(tdd.exceptions.ConfigError) as excinfo:
+    with pytest.raises(tdd.exceptions.TDDConfigError) as excinfo:
         client.token
 
     assert "invalid credentials" in str(excinfo.value).lower()

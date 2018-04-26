@@ -9,7 +9,7 @@ from io import StringIO
 import requests
 import csv
 
-from tdd.exceptions import ConfigError
+from tdd.exceptions import TDDConfigError
 
 class BaseTDDClient(requests.Session):
     """
@@ -76,7 +76,7 @@ class BaseTDDClient(requests.Session):
             logging.error(err)
             logging.error(resp.text)
             if err.response.status_code == 401:
-                raise ConfigError(resp.text)
+                raise TDDConfigError(resp.text)
             else:
                 raise
 
