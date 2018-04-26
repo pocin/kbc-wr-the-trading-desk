@@ -106,26 +106,51 @@ CreateCampaignSchema = vp.Schema(
 
 CreateAdGroupSchema = vp.Schema(
     {
+        "CampaignID": str,
         "AdGroupName": str,
-        vp.Optional("CampaignID"): str,
+        "Description": str,
+        "IsEnabled": vp.Coerce(bool),
         "IndustryCategoryID": vp.Coerce(int),
-        "IsEnabled": bool,
         "RTBAttributes": {
-            "RTBAdGroupAttributes": vp.Schema(
-                {
-                    "BudgetSettings": vp.Schema(
-                        {
-                            "Budget": reusable_dtypes['_money'],
-                            "BudgetInImpressions": vp.Coerce(int),
-                            "DailyBudget": reusable_dtypes['_money'],
-                            "DailyBudgetInImpressions": vp.Coerce(int)
-                        },
-                        extra=vp.ALLOW_EXTRA,
-                        required=False),
-                    "BaseBidCPM": reusable_dtypes['_money'],
-                    "MaxBidCPM": reusable_dtypes['_money']
-                })
+            "BudgetSettings": vp.Schema({
+                "Budget": reusable_dtypes['_money'],
+                "DailyBudget": reusable_dtypes['_money'],
+                "PacingEnabled": vp.Coerce(bool)}),
+            "BaseBidCPM": reusable_dtypes['_money'],
+            "MaxBidCPM": reusable_dtypes['_money'],
+            "CreativeIds": [vp.Coerce(int)],
+            "AudienceTargeting": {"AudienceId": vp.Coerce(int)},
+            "ROIGoal": {
+                "CPAInAdvertiserCurrency": reusable_dtypes['_money']
+            },
+            "AutoOptimizationSettings": {
+                "IsBaseBidAutoOptimizationEnabled": vp.Coerce(bool),
+                "IsAudienceAutoOptimizationEnabled": vp.Coerce(bool),
+                "IsSiteAutoOptimizationEnabled": vp.Coerce(bool),
+                "IsCreativeAutoOptimizationEnabled": vp.Coerce(bool),
+                "IsSupplyVendorAutoOptimizationEnabled": vp.Coerce(bool),
+                "IsUseClicksAsConversionsEnabled": vp.Coerce(bool),
+                "IsUseSecondaryConversionsEnabled": vp.Coerce(bool)
+            }
         }
     },
     extra=vp.ALLOW_EXTRA,
     required=True)
+
+def prepare_create_adgroup_data(path_csv, id_column):
+
+    # Pass the dataset once (so we don't have to store it in memory)
+    for _ in validate_input_csv(
+            path_csv,
+            schema=CreateAdGroupSchema,
+            id_column=id_column,
+            include_id_column=True):
+        pass
+
+    # If the previous step was ok, then we can actually start serving the values
+    # maybe I can convert the input csv to list straight away??? TODO: benchmark
+    yield from validate_input_csv(
+        path_csv,
+        schema=CreateAdGroupSchema,
+        id_column=id_column,
+        include_id_column=True)
