@@ -4,9 +4,9 @@ Sort of functional tests for parsing input
 """
 import pytest
 
-from tdd.models import prepare_create_adgroup_data
+from tdd.models import prepare_create_adgroup_data, prepare_create_campaign_data
 
-def test_validating_creating_campaign(tmpdir):
+def test_validating_creating_adgroup(tmpdir):
     incsv_contents = """CampaignID,path,value
 42,AdGroupName,"Test adgroup"
 42,Description,"Test adgroup desc"
@@ -69,6 +69,57 @@ def test_validating_creating_campaign(tmpdir):
         }
     }
 
-    for adgroup in prepare_create_adgroup_data(incsv.strpath, id_column='CampaignID'):
+    for adgroup in prepare_create_adgroup_data(incsv.strpath):
         assert adgroup == expected
 
+
+
+
+def test_creating_campaign_validation(tmpdir):
+
+    incsv_contents = """CampaignID,path,value
+temporary,AdvertiserId,42
+temporary,CampaignName,TEST
+temporary,Description,TEST
+temporary,Budget__Amount,1000
+temporary,Budget__CurrencyCode,USD
+temporary,DailyBudget__Amount,1000
+temporary,DailyBudget__CurrencyCode,USD
+temporary,StartDate,2017
+temporary,EndDate,2017
+temporary,CampaignConversionReportingColumns___0TrackingTagId,1
+temporary,CampaignConversionReportingColumns___0ReportingColumnId,11
+temporary,CampaignConversionReportingColumns___1TrackingTagId,1
+temporary,CampaignConversionReportingColumns___1ReportingColumnId,11
+"""
+    incsv = tmpdir.join('input.csv')
+    incsv.write(incsv_contents)
+
+    money = {
+        "Amount": 1000.0,
+        "CurrencyCode": "USD"
+    }
+    expected = {
+        "CampaignID": "temporary",
+        "AdvertiserId": 42,
+        "CampaignName": "TEST",
+        "Description": "TEST",
+        "Budget": money,
+        "DailyBudget": money,
+        "StartDate": "2017",
+        "EndDate": "2017",
+        "CampaignConversionReportingColumns": [
+            {"TrackingTagId": 1,
+             "ReportingColumnId": 11},
+            {"TrackingTagId": 1,
+             "ReportingColumnId": 11}
+        ]
+    }
+
+    # Either jsontangle must parse nested jsons 
+    # OR the nested json will be a string and Voluptuos schema will load the json
+
+    # Depends if the nested jsons need to be dynamic or static?
+
+    for campaign in prepare_create_campaign_data(incsv.strpath):
+        assert campaign == expected

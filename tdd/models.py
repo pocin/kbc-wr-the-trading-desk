@@ -94,12 +94,19 @@ reusable_dtypes = {
 # "description": "2018-04-10T11:37:46.4780952+00:00",
 CreateCampaignSchema = vp.Schema(
     {
-        "StartDate": str,
-        "EndDate": str,
+        "AdvertiserId": str,
+        "CampaignName": str,
+        "Description": str,
         "Budget": reusable_dtypes['_money'],
         "DailyBudget": reusable_dtypes['_money'],
-        vp.Optional("BudgetInImpressions"): vp.Any(None, vp.Coerce(int)),
-        vp.Optional("DailyBudgetInImpressions"): vp.Any(None, vp.Coerce(int))
+        "StartDate": str, # Coerce to datetimes
+        "EndDate": str, # Coerce to datetimes
+        "CampaignConversionReportingColumns": [
+            {
+                "TrackingTagId": vp.Coerce(int),
+                "ReportingColumnId": vp.Coerce(int)
+            }
+        ]
     },
     extra=True,
     required=True)
@@ -137,13 +144,13 @@ CreateAdGroupSchema = vp.Schema(
     extra=vp.ALLOW_EXTRA,
     required=True)
 
-def prepare_create_adgroup_data(path_csv, id_column):
+def prepare_create_adgroup_data(path_csv):
 
     # Pass the dataset once (so we don't have to store it in memory)
     for _ in validate_input_csv(
             path_csv,
             schema=CreateAdGroupSchema,
-            id_column=id_column,
+            id_column='CampaignID',
             include_id_column=True):
         pass
 
@@ -152,5 +159,23 @@ def prepare_create_adgroup_data(path_csv, id_column):
     yield from validate_input_csv(
         path_csv,
         schema=CreateAdGroupSchema,
-        id_column=id_column,
+        id_column='CampaignID',
+        include_id_column=True)
+
+def prepare_create_campaign_data(path_csv):
+
+    # Pass the dataset once (so we don't have to store it in memory)
+    for _ in validate_input_csv(
+            path_csv,
+            schema=CreateCampaignSchema,
+            id_column="CampaignID",
+            include_id_column=True):
+        pass
+
+    # If the previous step was ok, then we can actually start serving the values
+    # maybe I can convert the input csv to list straight away??? TODO: benchmark
+    yield from validate_input_csv(
+        path_csv,
+        schema=CreateCampaignSchema,
+        id_column="CampaignID",
         include_id_column=True)
