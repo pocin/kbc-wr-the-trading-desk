@@ -77,7 +77,7 @@ def test_validating_creating_adgroup(tmpdir):
 
 def test_creating_campaign_validation(tmpdir):
 
-    incsv_contents = """CampaignID,path,value
+    incsv_contents = '''CampaignID,path,value
 temporary,AdvertiserId,42
 temporary,CampaignName,TEST
 temporary,Description,TEST
@@ -87,11 +87,9 @@ temporary,DailyBudget__Amount,1000
 temporary,DailyBudget__CurrencyCode,USD
 temporary,StartDate,2017
 temporary,EndDate,2017
-temporary,CampaignConversionReportingColumns___0TrackingTagId,1
-temporary,CampaignConversionReportingColumns___0ReportingColumnId,11
-temporary,CampaignConversionReportingColumns___1TrackingTagId,1
-temporary,CampaignConversionReportingColumns___1ReportingColumnId,11
-"""
+temporary,CampaignConversionReportingColumns___0,"{""TrackingTagId"": 1, ""ReportingColumnId"": 11}"
+temporary,CampaignConversionReportingColumns___1,"{""TrackingTagId"": 1, ""ReportingColumnId"": 11}"
+'''
     incsv = tmpdir.join('input.csv')
     incsv.write(incsv_contents)
 

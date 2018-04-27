@@ -91,22 +91,27 @@ reusable_dtypes = {
     }
 }
 
+def _CampaignReportingColumns(jsonstr):
+    schema = vp.Schema(
+            {
+                "TrackingTagId": vp.Coerce(int),
+                "ReportingColumnId": vp.Coerce(int)
+            },
+        extra=True,
+        required=True)
+    return schema(json.loads(jsonstr))
+
 # "description": "2018-04-10T11:37:46.4780952+00:00",
 CreateCampaignSchema = vp.Schema(
     {
-        "AdvertiserId": str,
+        "AdvertiserId": vp.Coerce(int),
         "CampaignName": str,
         "Description": str,
         "Budget": reusable_dtypes['_money'],
         "DailyBudget": reusable_dtypes['_money'],
         "StartDate": str, # Coerce to datetimes
         "EndDate": str, # Coerce to datetimes
-        "CampaignConversionReportingColumns": [
-            {
-                "TrackingTagId": vp.Coerce(int),
-                "ReportingColumnId": vp.Coerce(int)
-            }
-        ]
+        "CampaignConversionReportingColumns": [_CampaignReportingColumns]
     },
     extra=True,
     required=True)
