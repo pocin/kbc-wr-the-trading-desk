@@ -104,6 +104,7 @@ def _CampaignReportingColumns(jsonstr):
 # "description": "2018-04-10T11:37:46.4780952+00:00",
 CreateCampaignSchema = vp.Schema(
     {
+        "CampaignID": str,
         "AdvertiserId": vp.Coerce(int),
         "CampaignName": str,
         "Description": str,

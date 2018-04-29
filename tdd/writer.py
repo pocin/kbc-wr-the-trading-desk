@@ -30,14 +30,9 @@ def _main(datadir):
                        path_csv_log=path_csv_log)
 
     path_campaigns = intables / 'create_campaigns.csv'
-    logging.info("Validating campaign input @ %s", path_campaigns)
-    # first pass is to check it's ok
     # TODO: maybe we actually need to load it into memory
     # to match campaigns and adgroups based on common ID (hash)?
-    for _ in writer.validate_campaign_input(path_campaigns):
-        pass
-
-    logging.info("Campaign input seems to be OK")
+    campaign_data = tdd.models.prepare_create_campaign_data(path_campaigns)
 
     path_adgroup = intables / 'crate_adgroup.csv'
     # at this point the adgroup code doesn't contain the campaign id
@@ -57,17 +52,12 @@ class TDDWriter(KBCTDDClient):
     - partial input validation
     """
 
-    def validate_campaign_input(self, path_csv):
-        yield from tdd.models.validate_input_csv(
-            path_csv,
-            schema=tdd.models.CreateCampaignSchema)
+    def create_campaign(self):
+        # TODO: ignore campaign ID if present
+        raise NotImplementedError()
 
-
-    def validate_adgroup_input(self, path_csv):
-        yield from tdd.models.validate_input_csv(
-            path_csv,
-            schema=tdd.models.CreateAdGroupSchema)
-
+    def create_adgroup(self):
+        raise NotImplementedError()
     def create_campaign_and_adgroup(self, campaign_payload, adgroup_payload):
         """
         This expects that adgroup_payload is actually valid
