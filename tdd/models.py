@@ -1,7 +1,30 @@
 """
 Models for csv-json serialization and partial validation
 
-use jsonschema to validate data against the model schema
+use voluptuous to validate data against the model schema
+
+While parsing the csvs, the validated jsons are dumped into local sqlite
+database.
+If an error is thrown in the process, we know there was a mistake. If it
+passess sucesfully, then the data should be ok and we can proceed with making
+API requests.
+
+
+The temp database contains tables
+
+campaigns
+ - campaign_id
+ - payload
+
+adgroups
+ - campaign_id
+ - adgroup_id
+ - payload
+
+In both cases, the payload should be processed with json.loads()
+- the payload is validated and coerced against the schema
+- doesn't contain any ID's the ids were factored out (into *_id columns)
+  of the payload in the previous step
 """
 import json
 import csv
@@ -277,3 +300,18 @@ def _adgroup_data_into_db(adgroup_data, conn):
                        adgroup_id=adid,
                        payload=row)
     conn.commit()
+
+def query_campaigns(conn):
+    q = """SELECT * FROM campaigns;"""
+
+    cursor = conn.cursor()
+    for row in cursor.execute(q):
+        yield row
+
+
+def query_adgroups(conn, campaign_id):
+    q = """SELECT * FROM adgroups WHERE campaign_id=?;"""
+
+    cursor = conn.cursor()
+    for row in cursor.execute(q, (campaign_id, )):
+        yield row

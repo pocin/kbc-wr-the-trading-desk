@@ -11,6 +11,21 @@ def conn(tmpdir):
     conn.commit()
     return conn
 
+@pytest.fixture
+def conn_with_records(tmpdir):
+    db_path = tmpdir.join('tmp_master_database.sqlite3')
+    conn = tdd.models._init_database(db_path.strpath)
+    curr = conn.cursor()
+    tdd.models._create_tables(curr)
+
+
+    payload = {"foo": "bar", "baz": 42}
+    tdd.models.insert_campaign(curr, 'campA', payload)
+    tdd.models.insert_adgroup(curr, 'campA', 'adgrpA', payload)
+    tdd.models.insert_adgroup(curr, 'campA', 'adgrpB', payload)
+    tdd.models.insert_adgroup(curr, 'campA', 'adgrpC', payload)
+    conn.commit()
+    return conn
 
 
 def test_creating_tables(tmpdir):
@@ -60,3 +75,22 @@ def test_inserting_adgroup(conn):
     assert adb['adgroup_id'] == 'tempB'
 
     assert json.loads(ada['payload'])['baz'] == 42
+
+def test_querying_campaigns(conn_with_records):
+    campaigns = tdd.models.query_campaigns(conn_with_records)
+    campaign = next(campaigns)
+    assert campaign['campaign_id'] == 'campA'
+    assert campaign['payload'] is not None
+    with pytest.raises(IndexError):
+        campaign['adgroup_id']
+    with pytest.raises(StopIteration):
+        next(campaigns)
+
+
+
+def test_querying_adgroups(conn_with_records):
+    adgroups = tdd.models.query_adgroups(conn_with_records, campaign_id='campA')
+    for adgroup in adgroups:
+        assert adgroup['campaign_id'] == 'campA'
+        assert adgroup['adgroup_id'] in ("adgrpA", "adgrpB", "adgrpC")
+        assert adgroup['payload'] is not None
