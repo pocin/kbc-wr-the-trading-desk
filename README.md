@@ -118,7 +118,7 @@ $ docker-compose run --rm dev
 /code # python3
 >>> import tdd.models
 >>> path_campaigns = './data/create_campaign.csv'
->>> serialized = tdd.models.prepare_create_campaign_data(path_campaign)
+>>> serialized = tdd.models._prepare_create_campaign_data(path_campaign)
 >>> for adgroup in serialized:
 ...     print(adgroup)
 

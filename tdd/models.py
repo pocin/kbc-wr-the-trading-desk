@@ -8,6 +8,8 @@ import csv
 from functools import reduce
 from operator import itemgetter
 from itertools import groupby
+import sqlite3
+import os
 import voluptuous as vp
 from collections import defaultdict
 import jsontangle
@@ -166,38 +168,112 @@ CreateAdGroupSchema = vp.Schema(
     extra=vp.ALLOW_EXTRA,
     required=True)
 
-def prepare_create_adgroup_data(path_csv):
+def _prepare_create_adgroup_data(path_csv):
+    """ parse input campaign csv and return cleaned rows
 
-    # Pass the dataset once (so we don't have to store it in memory)
-    for _ in validate_input_csv(
+    we can be sure all data is ok only after the whole generator is consumed!!!
+
+    the returned generator yields dict which can be sent to the api:
+        {'CampaignID': 42, "RTBAttributes": {"BudgetSettings": ...}, }
+    """
+    # we can be sure all data is ok only after the whole generator is consumed!!!
+    yield from validate_input_csv(
             path_csv,
             schema=CreateAdGroupSchema,
             id_column=['CampaignID', 'tempAdgroupID'],
-            include_id_column=True):
-        pass
+            include_id_column=True)
 
-    # If the previous step was ok, then we can actually start serving the values
-    # maybe I can convert the input csv to list straight away??? TODO: benchmark
-    yield from validate_input_csv(
-        path_csv,
-        schema=CreateAdGroupSchema,
-        id_column=['CampaignID', 'tempAdgroupID'],
-        include_id_column=True)
 
-def prepare_create_campaign_data(path_csv):
 
-    # Pass the dataset once (so we don't have to store it in memory)
-    for _ in validate_input_csv(
-            path_csv,
-            schema=CreateCampaignSchema,
-            id_column=["CampaignID"],
-            include_id_column=True):
-        pass
 
-    # If the previous step was ok, then we can actually start serving the values
-    # maybe I can convert the input csv to list straight away??? TODO: benchmark
+def _prepare_create_campaign_data(path_csv):
+    """ parse input campaign csv and return cleaned rows
+
+    we can be sure all data is ok only after the whole generator is consumed!!!
+    """
     yield from validate_input_csv(
         path_csv,
         schema=CreateCampaignSchema,
         id_column=["CampaignID"],
         include_id_column=True)
+
+
+
+def _init_database(path='/tmp/tddwriter_data.sqlite3', overwrite=True):
+    logging.debug("Creating database for storing parsed data")
+    if overwrite:
+        try:
+            os.remove(path)
+        except OSError:
+            logging.debug("%s exists, overwriting!", path)
+    conn = sqlite3.connect(path)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def _create_tables(cursor):
+    create_campaigns = """
+    CREATE TABLE "campaigns" (
+    campaign_id CHAR(255) PRIMARY KEY NOT NULL,
+    payload TEXT NOT NULL
+    );
+    """
+    create_adgroups = """
+    CREATE TABLE "adgroups" (
+        campaign_id TEXT NOT NULL,
+        adgroup_id TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        PRIMARY KEY (campaign_id, adgroup_id));
+    """
+
+    cursor.execute(create_campaigns)
+    cursor.execute(create_adgroups)
+
+
+def insert_campaign(cursor, campaign_id, payload):
+    query = "INSERT INTO campaigns(campaign_id, payload) VALUES (?,?);"
+    return cursor.execute(query, (campaign_id, json.dumps(payload)))
+
+def insert_adgroup(cursor, campaign_id, adgroup_id, payload):
+    query = "INSERT INTO adgroups(campaign_id, adgroup_id, payload) VALUES (?, ?, ?);"
+    return cursor.execute(query, (campaign_id, adgroup_id, json.dumps(payload)))
+
+
+def _campaign_data_into_db(campaign_data, conn):
+    """
+    Args:
+        campaign_data: an iterable of dicts reperesenting the serialized
+            payloads which can be sent to the API.
+            Created by _prepare_create_campaign_data()
+        conn: a connection to the database
+
+
+    """
+    logging.debug("Inserting campaign data into tmp database")
+    cursor = conn.cursor()
+    for row in campaign_data:
+        cid = row.pop('CampaignID')
+        insert_campaign(cursor,
+                        campaign_id=cid,
+                        payload=row)
+
+    conn.commit()
+
+def _adgroup_data_into_db(adgroup_data, conn):
+    """ insert adgroups into database
+    Args:
+        adgroup_data: an iterable of dicts reperesenting the serialized
+            payloads which can be sent to the API.
+            Created by _prepare_create_adgroup_data()
+        conn: a connection to the database
+
+    """
+    logging.debug("Inserting adgroup data into tmp database")
+    cursor = conn.cursor()
+    for row in adgroup_data:
+        cid = row.pop('CampaignID')
+        adid = row.pop('tempAdgroupID')
+        insert_adgroup(cursor,
+                       campaign_id=cid,
+                       adgroup_id=adid,
+                       payload=row)
+    conn.commit()

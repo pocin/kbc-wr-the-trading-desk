@@ -32,7 +32,7 @@ def _main(datadir):
     path_campaigns = intables / 'create_campaigns.csv'
     # TODO: maybe we actually need to load it into memory
     # to match campaigns and adgroups based on common ID (hash)?
-    campaign_data = tdd.models.prepare_create_campaign_data(path_campaigns)
+    campaign_data = tdd.models._prepare_create_campaign_data(path_campaigns)
 
     path_adgroup = intables / 'crate_adgroup.csv'
     # at this point the adgroup code doesn't contain the campaign id

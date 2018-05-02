@@ -3,10 +3,22 @@ Sort of functional tests for parsing input
 
 """
 import pytest
+import json
 
-from tdd.models import prepare_create_adgroup_data, prepare_create_campaign_data
+from tdd.models import _prepare_create_adgroup_data, _prepare_create_campaign_data
+import tdd.models
 
-def test_validating_creating_adgroup(tmpdir):
+
+@pytest.fixture
+def conn(tmpdir):
+    db_path = tmpdir.join('tmp_master_database.sqlite3')
+    conn = tdd.models._init_database(db_path.strpath)
+    curr = conn.cursor()
+    tdd.models._create_tables(curr)
+    conn.commit()
+    return conn
+
+def test_validating_creating_adgroup(tmpdir, conn):
     """One campaign can have multiple adgroups
     """
     incsv_contents = """CampaignID,tempAdgroupID,path,value
@@ -126,11 +138,18 @@ def test_validating_creating_adgroup(tmpdir):
     }
     ]
 
-    adgroups = list(prepare_create_adgroup_data(incsv.strpath))
+    adgroups = list(_prepare_create_adgroup_data(incsv.strpath))
     assert (adgroups[0] == expected[0]) or (adgroups[0] == expected[1])
     assert (adgroups[1] == expected[0]) or (adgroups[1] == expected[1])
 
 
+    tdd.models._adgroup_data_into_db(adgroups, conn)
+    curr = conn.cursor()
+    for adgrp in curr.execute("SELECT * FROM adgroups;"):
+        if adgrp['adgroup_id'] == 'tempA':
+            assert json.loads(adgrp['payload'])["Description"] == "Test adgroup desc"
+        if adgrp['adgroup_id'] == 'tempB':
+            assert json.loads(adgrp['payload'])["Description"] == "Test adgroup desc"
 
 
 def test_creating_campaign_validation(tmpdir):
@@ -177,5 +196,5 @@ temporary,CampaignConversionReportingColumns___1,"{""TrackingTagId"": 1, ""Repor
 
     # Depends if the nested jsons need to be dynamic or static?
 
-    for campaign in prepare_create_campaign_data(incsv.strpath):
+    for campaign in _prepare_create_campaign_data(incsv.strpath):
         assert campaign == expected
