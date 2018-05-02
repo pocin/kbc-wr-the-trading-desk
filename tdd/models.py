@@ -15,6 +15,29 @@ import logging
 from tdd.exceptions import TDDConfigError
 
 
+def _column_to_row_format(values, id_columns=None):
+    """
+    After groupby we get a
+    [
+    {'path': "foo__bar", "value": 42, 'id': 1},
+    ...
+    ]
+    which we need to convert into
+    [{'foo__bar': 42}, ...]
+
+    or
+    [{'foo__bar': 42, 'id': 1}, ...]
+    if id_columns is not None
+    """
+    for row in values:
+        # {'path': "foo__bar", "value": 42, 'id': 1},
+        formatted_group = {row['path']: row['value']}
+        if id_columns:
+            for col in id_columns:
+                formatted_group[col] = row[col]
+        yield formatted_group
+
+
 def csv_to_json(io, id_column, include_id_column=True):
     """Convert input csv into [possibly] nested json
 
@@ -26,30 +49,23 @@ def csv_to_json(io, id_column, include_id_column=True):
 
     Arguments:
         io: either /path/to/input.csv or filelike object
-        id_column (optional): column upon which the group by will be performed.
+        id_column (list): a list of column[s] upon which the group by will be performed.
     """
+
     logging.info("Parsing %s", io)
-    if id_column is None:
-        raise TDDConfigError("Must specify an id_column on which to perform group by")
+    if not isinstance(id_column, list):
+        raise TDDConfigError("Must specify a list of id_column on which to perform group by")
     else:
-        pk = itemgetter(id_column)
+        pk = itemgetter(*id_column)
     with open(io, 'r') as fin:
         reader = csv.DictReader(fin)
-        REQUIRED_COLUMNS = ['path', id_column, 'value']
+        REQUIRED_COLUMNS = ['path', 'value'] + id_column
         for col in REQUIRED_COLUMNS:
             if col not in reader.fieldnames:
                 raise TDDConfigError("the file '{}' must include column '{}'".format(io, col))
         rows = sorted(reader, key=pk)
         for pk, values in groupby(rows, pk):
-            if include_id_column:
-                cleaned_values = ({id_column: row[id_column],
-                                   row['path']: row['value']}
-                                  for row
-                                  in values)
-            else:
-                cleaned_values = ({row['path']: row['value']}
-                                  for row
-                                  in values)
+            cleaned_values = _column_to_row_format(values, id_column if include_id_column else None)
             yield jsontangle.tangle(cleaned_values)
 
 
@@ -156,7 +172,7 @@ def prepare_create_adgroup_data(path_csv):
     for _ in validate_input_csv(
             path_csv,
             schema=CreateAdGroupSchema,
-            id_column='CampaignID',
+            id_column=['CampaignID'],
             include_id_column=True):
         pass
 
@@ -165,7 +181,7 @@ def prepare_create_adgroup_data(path_csv):
     yield from validate_input_csv(
         path_csv,
         schema=CreateAdGroupSchema,
-        id_column='CampaignID',
+        id_column=['CampaignID'],
         include_id_column=True)
 
 def prepare_create_campaign_data(path_csv):
@@ -174,7 +190,7 @@ def prepare_create_campaign_data(path_csv):
     for _ in validate_input_csv(
             path_csv,
             schema=CreateCampaignSchema,
-            id_column="CampaignID",
+            id_column=["CampaignID"],
             include_id_column=True):
         pass
 
@@ -183,5 +199,5 @@ def prepare_create_campaign_data(path_csv):
     yield from validate_input_csv(
         path_csv,
         schema=CreateCampaignSchema,
-        id_column="CampaignID",
+        id_column=["CampaignID"],
         include_id_column=True)

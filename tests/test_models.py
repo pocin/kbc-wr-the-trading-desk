@@ -18,7 +18,7 @@ def test_parsing_csv_raises_on_missing_column(tmpdir):
 1,"Robin",42
 1,Ahoj,666""")
     with pytest.raises(TDDConfigError):
-        list(tdd.models.csv_to_json(csv_infile.strpath, id_column='id'))
+        list(tdd.models.csv_to_json(csv_infile.strpath, id_column=['id']))
 
 def test_parsing_and_validating_csv_no_id_column(tmpdir):
     csv_infile = tmpdir.join('input.csv')
@@ -33,7 +33,7 @@ def test_parsing_and_validating_csv_no_id_column(tmpdir):
 
     validated_and_coerced = tdd.models.validate_input_csv(csv_infile,
                                                           schema,
-                                                          id_column='id',
+                                                          id_column=['id'],
                                                           include_id_column=True)
     assert list(validated_and_coerced) == expected
 
@@ -66,6 +66,55 @@ campA,budget__Currency,USD'''
     csv_infile = _prepare_incsv(tmpdir, contents)
     serialized = list(tdd.models.csv_to_json(
         csv_infile.strpath,
-        id_column='campaign_id',
+        id_column=['campaign_id'],
         include_id_column=True))
     assert expected[0] == serialized[0]
+
+def test_converting_csv_row_format_to_column_format():
+
+    # as returned by csv.DictReader
+    raw_csv_values = [
+        {"path": "campaign__name",
+         "value": "Ucelovka",
+         "campaign_id": 1,
+         "subcampaign_id": 1},
+        {"path": "campaign__description",
+         "value": "kampan proti babisovi",
+         "campaign_id": 1,
+         "subcampaign_id": 1},
+    ]
+
+    expected = [
+        {
+            "campaign__name": "Ucelovka",
+            "campaign_id": 1,
+            "subcampaign_id": 1
+
+        },
+        {
+            "campaign__description": "kampan proti babisovi",
+            "campaign_id": 1,
+            "subcampaign_id": 1
+        }
+    ]
+
+    converted_with_ids = list(tdd.models._column_to_row_format(
+        raw_csv_values,
+        id_columns=['campaign_id', 'subcampaign_id']))
+    assert converted_with_ids[0]  == expected[0]
+
+
+    expected_without_ids = [
+        {
+            "campaign__name": "Ucelovka"
+        },
+        {
+            "campaign__description": "kampan proti babisovi",
+        }
+    ]
+
+
+    converted_without_ids = list(tdd.models._column_to_row_format(
+        raw_csv_values,
+        id_columns=None))
+    assert converted_without_ids[0] == expected_without_ids[0]
