@@ -112,7 +112,7 @@ CreateCampaignSchema = vp.Schema(
         "DailyBudget": reusable_dtypes['_money'],
         "StartDate": str, # Coerce to datetimes
         "EndDate": str, # Coerce to datetimes
-        "CampaignConversionReportingColumns": [_CampaignReportingColumns]
+        vp.Optional("CampaignConversionReportingColumns"): vp.Any([], [_CampaignReportingColumns])
     },
     extra=True,
     required=True)
@@ -131,7 +131,7 @@ CreateAdGroupSchema = vp.Schema(
                 "PacingEnabled": vp.Coerce(bool)}),
             "BaseBidCPM": reusable_dtypes['_money'],
             "MaxBidCPM": reusable_dtypes['_money'],
-            "CreativeIds": [vp.Coerce(int)],
+            vp.Optional("CreativeIds"): vp.Any([], [vp.Coerce(int)]),
             "AudienceTargeting": {"AudienceId": vp.Coerce(int)},
             "ROIGoal": {
                 "CPAInAdvertiserCurrency": reusable_dtypes['_money']
