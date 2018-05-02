@@ -7,33 +7,61 @@ import pytest
 from tdd.models import prepare_create_adgroup_data, prepare_create_campaign_data
 
 def test_validating_creating_adgroup(tmpdir):
-    incsv_contents = """CampaignID,path,value
-42,AdGroupName,"Test adgroup"
-42,Description,"Test adgroup desc"
-42,IsEnabled,True
-42,IndustryCategoryID,42
-42,RTBAttributes__BudgetSettings__Budget__Amount,1000
-42,RTBAttributes__BudgetSettings__Budget__CurrencyCode,USD
-42,RTBAttributes__BudgetSettings__DailyBudget__Amount,1000
-42,RTBAttributes__BudgetSettings__DailyBudget__CurrencyCode,USD
-42,RTBAttributes__BudgetSettings__PacingEnabled,True
-42,RTBAttributes__BaseBidCPM__CurrencyCode,USD
-42,RTBAttributes__BaseBidCPM__Amount,1000
-42,RTBAttributes__MaxBidCPM__CurrencyCode,USD
-42,RTBAttributes__MaxBidCPM__Amount,1000
-42,RTBAttributes__CreativeIds___0,12
-42,RTBAttributes__CreativeIds___1,12
-42,RTBAttributes__CreativeIds___2,12
-42,RTBAttributes__AudienceTargeting__AudienceId,666
-42,RTBAttributes__ROIGoal__CPAInAdvertiserCurrency__CurrencyCode,USD
-42,RTBAttributes__ROIGoal__CPAInAdvertiserCurrency__Amount,1000
-42,RTBAttributes__AutoOptimizationSettings__IsSiteAutoOptimizationEnabled,True
-42,RTBAttributes__AutoOptimizationSettings__IsUseClicksAsConversionsEnabled,True
-42,RTBAttributes__AutoOptimizationSettings__IsBaseBidAutoOptimizationEnabled,True
-42,RTBAttributes__AutoOptimizationSettings__IsUseSecondaryConversionsEnabled,True
-42,RTBAttributes__AutoOptimizationSettings__IsSupplyVendorAutoOptimizationEnabled,True
-42,RTBAttributes__AutoOptimizationSettings__IsCreativeAutoOptimizationEnabled,True
-42,RTBAttributes__AutoOptimizationSettings__IsAudienceAutoOptimizationEnabled,True"""
+    """One campaign can have multiple adgroups
+    """
+    incsv_contents = """CampaignID,tempAdgroupID,path,value
+42,tempA,AdGroupName,"Test adgroup"
+42,tempA,Description,"Test adgroup desc"
+42,tempA,IsEnabled,True
+42,tempA,IndustryCategoryID,42
+42,tempA,RTBAttributes__BudgetSettings__Budget__Amount,1000
+42,tempA,RTBAttributes__BudgetSettings__Budget__CurrencyCode,USD
+42,tempA,RTBAttributes__BudgetSettings__DailyBudget__Amount,1000
+42,tempA,RTBAttributes__BudgetSettings__DailyBudget__CurrencyCode,USD
+42,tempA,RTBAttributes__BudgetSettings__PacingEnabled,True
+42,tempA,RTBAttributes__BaseBidCPM__CurrencyCode,USD
+42,tempA,RTBAttributes__BaseBidCPM__Amount,1000
+42,tempA,RTBAttributes__MaxBidCPM__CurrencyCode,USD
+42,tempA,RTBAttributes__MaxBidCPM__Amount,1000
+42,tempA,RTBAttributes__CreativeIds___0,12
+42,tempA,RTBAttributes__CreativeIds___1,12
+42,tempA,RTBAttributes__CreativeIds___2,12
+42,tempA,RTBAttributes__AudienceTargeting__AudienceId,666
+42,tempA,RTBAttributes__ROIGoal__CPAInAdvertiserCurrency__CurrencyCode,USD
+42,tempA,RTBAttributes__ROIGoal__CPAInAdvertiserCurrency__Amount,1000
+42,tempA,RTBAttributes__AutoOptimizationSettings__IsSiteAutoOptimizationEnabled,True
+42,tempA,RTBAttributes__AutoOptimizationSettings__IsUseClicksAsConversionsEnabled,True
+42,tempA,RTBAttributes__AutoOptimizationSettings__IsBaseBidAutoOptimizationEnabled,True
+42,tempA,RTBAttributes__AutoOptimizationSettings__IsUseSecondaryConversionsEnabled,True
+42,tempA,RTBAttributes__AutoOptimizationSettings__IsSupplyVendorAutoOptimizationEnabled,True
+42,tempA,RTBAttributes__AutoOptimizationSettings__IsCreativeAutoOptimizationEnabled,True
+42,tempA,RTBAttributes__AutoOptimizationSettings__IsAudienceAutoOptimizationEnabled,True
+42,tempB,AdGroupName,"Test adgroup2"
+42,tempB,Description,"Test adgroup desc"
+42,tempB,IsEnabled,True
+42,tempB,IndustryCategoryID,42
+42,tempB,RTBAttributes__BudgetSettings__Budget__Amount,1000
+42,tempB,RTBAttributes__BudgetSettings__Budget__CurrencyCode,USD
+42,tempB,RTBAttributes__BudgetSettings__DailyBudget__Amount,1000
+42,tempB,RTBAttributes__BudgetSettings__DailyBudget__CurrencyCode,USD
+42,tempB,RTBAttributes__BudgetSettings__PacingEnabled,True
+42,tempB,RTBAttributes__BaseBidCPM__CurrencyCode,USD
+42,tempB,RTBAttributes__BaseBidCPM__Amount,1000
+42,tempB,RTBAttributes__MaxBidCPM__CurrencyCode,USD
+42,tempB,RTBAttributes__MaxBidCPM__Amount,1000
+42,tempB,RTBAttributes__CreativeIds___0,12
+42,tempB,RTBAttributes__CreativeIds___1,12
+42,tempB,RTBAttributes__CreativeIds___2,12
+42,tempB,RTBAttributes__AudienceTargeting__AudienceId,666
+42,tempB,RTBAttributes__ROIGoal__CPAInAdvertiserCurrency__CurrencyCode,USD
+42,tempB,RTBAttributes__ROIGoal__CPAInAdvertiserCurrency__Amount,1000
+42,tempB,RTBAttributes__AutoOptimizationSettings__IsSiteAutoOptimizationEnabled,True
+42,tempB,RTBAttributes__AutoOptimizationSettings__IsUseClicksAsConversionsEnabled,True
+42,tempB,RTBAttributes__AutoOptimizationSettings__IsBaseBidAutoOptimizationEnabled,True
+42,tempB,RTBAttributes__AutoOptimizationSettings__IsUseSecondaryConversionsEnabled,True
+42,tempB,RTBAttributes__AutoOptimizationSettings__IsSupplyVendorAutoOptimizationEnabled,True
+42,tempB,RTBAttributes__AutoOptimizationSettings__IsCreativeAutoOptimizationEnabled,True
+42,tempB,RTBAttributes__AutoOptimizationSettings__IsAudienceAutoOptimizationEnabled,True"""
     incsv = tmpdir.join('input.csv')
     incsv.write(incsv_contents)
 
@@ -41,8 +69,9 @@ def test_validating_creating_adgroup(tmpdir):
         "Amount": 1000.0,
         "CurrencyCode": "USD"
     }
-    expected = {
+    expected = [{
         "CampaignID": "42",
+        "tempAdgroupID": "tempA",
         "AdGroupName": "Test adgroup",
         "Description": "Test adgroup desc",
         "IsEnabled": True,
@@ -67,10 +96,39 @@ def test_validating_creating_adgroup(tmpdir):
                 "IsUseSecondaryConversionsEnabled": True
             }
         }
+    }, {
+        "CampaignID": "42",
+        "tempAdgroupID": "tempB",
+        "AdGroupName": "Test adgroup2",
+        "Description": "Test adgroup desc",
+        "IsEnabled": True,
+        "IndustryCategoryID": 42,
+        "RTBAttributes": {
+            "BudgetSettings": {
+                "Budget": money,
+                "DailyBudget": money,
+                "PacingEnabled": True},
+            "BaseBidCPM": money,
+            "MaxBidCPM": money,
+            "CreativeIds": [12, 12, 12],
+            "AudienceTargeting": {"AudienceId": 666},
+            "ROIGoal": {"CPAInAdvertiserCurrency": money},
+            "AutoOptimizationSettings": {
+                "IsBaseBidAutoOptimizationEnabled": True,
+                "IsAudienceAutoOptimizationEnabled": True,
+                "IsSiteAutoOptimizationEnabled": True,
+                "IsCreativeAutoOptimizationEnabled": True,
+                "IsSupplyVendorAutoOptimizationEnabled": True,
+                "IsUseClicksAsConversionsEnabled": True,
+                "IsUseSecondaryConversionsEnabled": True
+            }
+        }
     }
+    ]
 
-    for adgroup in prepare_create_adgroup_data(incsv.strpath):
-        assert adgroup == expected
+    adgroups = list(prepare_create_adgroup_data(incsv.strpath))
+    assert (adgroups[0] == expected[0]) or (adgroups[0] == expected[1])
+    assert (adgroups[1] == expected[0]) or (adgroups[1] == expected[1])
 
 
 

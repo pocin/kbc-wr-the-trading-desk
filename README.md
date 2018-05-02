@@ -33,39 +33,40 @@ check `tdd.models.CreateAdGroupSchema` for the schema which is being checked.
 This is a csv template
 
 ```
-CampaignID,path,value
-42,AdGroupName,"Test adgroup"
-42,Description,"Test adgroup desc"
-42,IsEnabled,True
-42,IndustryCategoryID,42
-42,RTBAttributes__BudgetSettings__Budget__Amount,1000
-42,RTBAttributes__BudgetSettings__Budget__CurrencyCode,USD
-42,RTBAttributes__BudgetSettings__DailyBudget__Amount,1000
-42,RTBAttributes__BudgetSettings__DailyBudget__CurrencyCode,USD
-42,RTBAttributes__BudgetSettings__PacingEnabled,True
-42,RTBAttributes__BaseBidCPM__CurrencyCode,USD
-42,RTBAttributes__BaseBidCPM__Amount,1000
-42,RTBAttributes__MaxBidCPM__CurrencyCode,USD
-42,RTBAttributes__MaxBidCPM__Amount,1000
-42,RTBAttributes__CreativeIds___0,12
-42,RTBAttributes__CreativeIds___1,12
-42,RTBAttributes__CreativeIds___2,12
-42,RTBAttributes__AudienceTargeting__AudienceId,666
-42,RTBAttributes__ROIGoal__CPAInAdvertiserCurrency__CurrencyCode,USD
-42,RTBAttributes__ROIGoal__CPAInAdvertiserCurrency__Amount,1000
-42,RTBAttributes__AutoOptimizationSettings__IsSiteAutoOptimizationEnabled,True
-42,RTBAttributes__AutoOptimizationSettings__IsUseClicksAsConversionsEnabled,True
-42,RTBAttributes__AutoOptimizationSettings__IsBaseBidAutoOptimizationEnabled,True
-42,RTBAttributes__AutoOptimizationSettings__IsUseSecondaryConversionsEnabled,True
-42,RTBAttributes__AutoOptimizationSettings__IsSupplyVendorAutoOptimizationEnabled,True
-42,RTBAttributes__AutoOptimizationSettings__IsCreativeAutoOptimizationEnabled,True
-42,RTBAttributes__AutoOptimizationSettings__IsAudienceAutoOptimizationEnabled,True
+CampaignID,tempAdgroupID,path,value
+42,whateverA,AdGroupName,"Test adgroup"
+42,whateverA,Description,"Test adgroup desc"
+42,whateverA,IsEnabled,True
+42,whateverA,IndustryCategoryID,42
+42,whateverA,RTBAttributes__BudgetSettings__Budget__Amount,1000
+42,whateverA,RTBAttributes__BudgetSettings__Budget__CurrencyCode,USD
+42,whateverA,RTBAttributes__BudgetSettings__DailyBudget__Amount,1000
+42,whateverA,RTBAttributes__BudgetSettings__DailyBudget__CurrencyCode,USD
+42,whateverA,RTBAttributes__BudgetSettings__PacingEnabled,True
+42,whateverA,RTBAttributes__BaseBidCPM__CurrencyCode,USD
+42,whateverA,RTBAttributes__BaseBidCPM__Amount,1000
+42,whateverA,RTBAttributes__MaxBidCPM__CurrencyCode,USD
+42,whateverA,RTBAttributes__MaxBidCPM__Amount,1000
+42,whateverA,RTBAttributes__CreativeIds___0,12
+42,whateverA,RTBAttributes__CreativeIds___1,12
+42,whateverA,RTBAttributes__CreativeIds___2,12
+42,whateverA,RTBAttributes__AudienceTargeting__AudienceId,666
+42,whateverA,RTBAttributes__ROIGoal__CPAInAdvertiserCurrency__CurrencyCode,USD
+42,whateverA,RTBAttributes__ROIGoal__CPAInAdvertiserCurrency__Amount,1000
+42,whateverA,RTBAttributes__AutoOptimizationSettings__IsSiteAutoOptimizationEnabled,True
+42,whateverA,RTBAttributes__AutoOptimizationSettings__IsUseClicksAsConversionsEnabled,True
+42,whateverA,RTBAttributes__AutoOptimizationSettings__IsBaseBidAutoOptimizationEnabled,True
+42,whateverA,RTBAttributes__AutoOptimizationSettings__IsUseSecondaryConversionsEnabled,True
+42,whateverA,RTBAttributes__AutoOptimizationSettings__IsSupplyVendorAutoOptimizationEnabled,True
+42,whateverA,RTBAttributes__AutoOptimizationSettings__IsCreativeAutoOptimizationEnabled,True
+42,whateverA,RTBAttributes__AutoOptimizationSettings__IsAudienceAutoOptimizationEnabled,True
 ```
 
-which will be compiled into
+which will be internally compiled into
 ```
 {
         "CampaignID": "42",
+        "tempAdgroupID": "whateverA", #this is just a temporary placeholder and is not sent to the API!
         "AdGroupName": "Test adgroup",
         "Description": "Test adgroup desc",
         "IsEnabled": True,
@@ -92,6 +93,22 @@ which will be compiled into
         }
     }
 ```
+
+
+the column `tempAdgroupID` is an arbitrary unique string grouping all rows for given `CampaignID-Adgroup` combination.  
+e.g.: One campaign (id 42) can have multiple adgroups (`whateverA` and `whateverB`)
+
+```
+CampaignID,tempAdgroupID,path,value
+42,whateverA,AdGroupName,"first adgroup for campaign 42"
+...
+42,whateverA,RTBAttributes__AutoOptimizationSettings__IsAudienceAutoOptimizationEnabled,True
+42,whateverB,AdGroupName,"second adgroup for campaign 42"
+...
+42,whateverB,RTBAttributes__AutoOptimizationSettings__IsAudienceAutoOptimizationEnabled,True
+```
+
+
 
 to attempt and compile the csv -> json locally try
 ```
@@ -159,7 +176,7 @@ This happens when both `/data/in/tables/create_campaign.csv` and `/data/in/table
 This is the detailed workflow:
 
 1. Take a campaign (all rows with the same `CampaignID`) from `create_campaign.csv`. At this point the `CampaignID` doesn't exist and is just a dummy placeholder value (must be unique within the dataset, though)
-2. All adgroups (zero or more) with the same `CampaignID` from table `create_adgroup.csv` are fetched.
+2. All adgroups (zero or more (more adgroups for one campaign are distinguished by the `tempAdgroupID` column)) with the same `CampaignID` from table `create_adgroup.csv` are fetched.
 3. Make an API request to create the Campaign. Use the returned `CampaignID` instead of the dummy one when making the requests to create the adgroups.
 
 # Development

@@ -172,7 +172,7 @@ def prepare_create_adgroup_data(path_csv):
     for _ in validate_input_csv(
             path_csv,
             schema=CreateAdGroupSchema,
-            id_column=['CampaignID'],
+            id_column=['CampaignID', 'tempAdgroupID'],
             include_id_column=True):
         pass
 
@@ -181,7 +181,7 @@ def prepare_create_adgroup_data(path_csv):
     yield from validate_input_csv(
         path_csv,
         schema=CreateAdGroupSchema,
-        id_column=['CampaignID'],
+        id_column=['CampaignID', 'tempAdgroupID'],
         include_id_column=True)
 
 def prepare_create_campaign_data(path_csv):
