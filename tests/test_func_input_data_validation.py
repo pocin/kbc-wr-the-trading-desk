@@ -13,9 +13,6 @@ import tdd.models
 def conn(tmpdir):
     db_path = tmpdir.join('tmp_master_database.sqlite3')
     conn = tdd.models._init_database(db_path.strpath)
-    curr = conn.cursor()
-    tdd.models._create_tables(curr)
-    conn.commit()
     return conn
 
 def test_validating_creating_adgroup(tmpdir, conn):

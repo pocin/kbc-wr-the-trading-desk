@@ -6,19 +6,14 @@ import tdd.models
 def conn(tmpdir):
     db_path = tmpdir.join('tmp_master_database.sqlite3')
     conn = tdd.models._init_database(db_path.strpath)
-    curr = conn.cursor()
-    tdd.models._create_tables(curr)
-    conn.commit()
     return conn
 
 @pytest.fixture
 def conn_with_records(tmpdir):
     db_path = tmpdir.join('tmp_master_database.sqlite3')
     conn = tdd.models._init_database(db_path.strpath)
+
     curr = conn.cursor()
-    tdd.models._create_tables(curr)
-
-
     payload = {"foo": "bar", "baz": 42}
     tdd.models.insert_campaign(curr, 'campA', payload)
     tdd.models.insert_adgroup(curr, 'campA', 'adgrpA', payload)
@@ -31,10 +26,6 @@ def conn_with_records(tmpdir):
 def test_creating_tables(tmpdir):
     db_path = tmpdir.join('tmp_database.sqlite3')
     conn = tdd.models._init_database(db_path.strpath)
-
-    curr = conn.cursor()
-    tdd.models._create_tables(curr)
-    conn.commit()
 
     curr = conn.cursor()
     tables = curr.execute("SELECT * FROM sqlite_master WHERE type='table'")

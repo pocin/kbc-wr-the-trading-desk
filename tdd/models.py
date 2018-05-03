@@ -231,9 +231,11 @@ def _init_database(path='/tmp/tddwriter_data.sqlite3', overwrite=True):
             logging.debug("%s exists, overwriting!", path)
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
+    _create_tables(conn)
+    conn.commit()
     return conn
 
-def _create_tables(cursor):
+def _create_tables(conn):
     create_campaigns = """
     CREATE TABLE "campaigns" (
     campaign_id CHAR(255) PRIMARY KEY NOT NULL,
@@ -248,8 +250,9 @@ def _create_tables(cursor):
         PRIMARY KEY (campaign_id, adgroup_id));
     """
 
-    cursor.execute(create_campaigns)
-    cursor.execute(create_adgroups)
+    with conn:
+        conn.execute(create_campaigns)
+        conn.execute(create_adgroups)
 
 
 def insert_campaign(cursor, campaign_id, payload):
