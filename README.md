@@ -33,10 +33,10 @@ In general, the writer behavior is as follows:
 4. If all is good, acutally start making requests
 5. Log all requests into csv which are then uploaded back to kbc Storage
 
-## Create adgroup
+## Create adgroups
 check `tdd.models.CreateAdGroupSchema` for the schema which is being checked.
 
-This is a csv template
+This is a csv template `/data/in/tables/create_adgroups.csv`
 
 ```
 CampaignId,AdgroupId,path,value
@@ -123,18 +123,18 @@ $ cp /your/path/to/create_campaigns.csv ./data
 $ docker-compose run --rm dev
 /code # python3
 >>> import tdd.models
->>> path_campaigns = './data/create_campaign.csv'
+>>> path_campaigns = './data/create_campaigns.csv'
 >>> serialized = tdd.models._prepare_create_campaign_data(path_campaign)
 >>> for adgroup in serialized:
 ...     print(adgroup)
 
 ```
 
-## Create Campaign
+## Create Campaigns
 
 check `tdd.models.CreateCampaignSchema` for the schema which is being checked.
 
-This csv template
+This csv template `/data/in/tables/create_campaigns.csv`
 ```
 CampaignId,path,value
 temporary_but_unique,AdvertiserId,42
@@ -153,7 +153,7 @@ would serialize into
 ```
 
 {
-  "CampaignId": "temporary_but_unique",
+  "CampaignId": "temporary_but_unique", #not sent to the api! used to identify all rows in csv
   "AdvertiserId": 42,
   "CampaignName": "TEST",
   "Description": "TEST",
@@ -178,11 +178,11 @@ The `CampaignId` is just a placeholder to group all the rows for given campaign 
 
 
 ## Create campaign and adgroup
-This happens when both `/data/in/tables/create_campaign.csv` and `/data/in/tables/create_adgroup.csv` tables are present.
+This happens when both `/data/in/tables/create_campaigns.csv` and `/data/in/tables/create_adgroups.csv` tables are present.
 This is the detailed workflow:
 
-1. Take a campaign (all rows with the same `CampaignId`) from `create_campaign.csv`. At this point the `CampaignId` doesn't exist and is just a dummy placeholder value (must be unique within the dataset, though)
-2. All adgroups (zero or more (more adgroups for one campaign are distinguished by the `AdgroupId` column)) with the same `CampaignId` from table `create_adgroup.csv` are fetched.
+1. Take a campaign (all rows with the same `CampaignId`) from `create_campaigns.csv`. At this point the `CampaignId` doesn't exist and is just a dummy placeholder value (must be unique within the dataset, though)
+2. All adgroups (zero or more (more adgroups for one campaign are distinguished by the `AdgroupId` column)) with the same `CampaignId` from table `create_adgroups.csv` are fetched.
 3. Make an API request to create the Campaign. Use the returned `CampaignId` instead of the dummy one when making the requests to create the adgroups.
 
 # Development

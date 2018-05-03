@@ -10,12 +10,6 @@ import os
 from tdd.client import KBCTDDClient
 import tdd.models
 from keboola.docker import Config
-from enum import Enum
-
-Action = Enum("Action", "campaigns adgroups campaigns_and_adgroups")
-
-ACTIONS = {
-}
 
 FNAME_ADGROUPS = 'create_adgroups.csv'
 FNAME_CAMPAIGNS = 'create_campaigns.csv'
