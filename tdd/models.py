@@ -23,7 +23,7 @@ adgroups
 
 In both cases, the payload should be processed with json.loads()
 - the payload is validated and coerced against the schema
-- doesn't contain any ID's the ids were factored out (into *_id columns)
+- doesn't contain any Id's the ids were factored out (into *_id columns)
   of the payload in the previous step
 """
 import json
@@ -145,7 +145,7 @@ def _CampaignReportingColumns(jsonstr):
 # "description": "2018-04-10T11:37:46.4780952+00:00",
 CreateCampaignSchema = vp.Schema(
     {
-        "CampaignID": str,
+        "CampaignId": str,
         "AdvertiserId": vp.Coerce(int),
         "CampaignName": str,
         "Description": str,
@@ -160,11 +160,11 @@ CreateCampaignSchema = vp.Schema(
 
 CreateAdGroupSchema = vp.Schema(
     {
-        "CampaignID": str,
+        "CampaignId": str,
         "AdGroupName": str,
         "Description": str,
         "IsEnabled": vp.Coerce(bool),
-        "IndustryCategoryID": vp.Coerce(int),
+        "IndustryCategoryId": vp.Coerce(int),
         "RTBAttributes": {
             "BudgetSettings": vp.Schema({
                 "Budget": reusable_dtypes['_money'],
@@ -197,13 +197,13 @@ def _prepare_create_adgroup_data(path_csv):
     we can be sure all data is ok only after the whole generator is consumed!!!
 
     the returned generator yields dict which can be sent to the api:
-        {'CampaignID': 42, "RTBAttributes": {"BudgetSettings": ...}, }
+        {'CampaignId': 42, "RTBAttributes": {"BudgetSettings": ...}, }
     """
     # we can be sure all data is ok only after the whole generator is consumed!!!
     yield from validate_input_csv(
             path_csv,
             schema=CreateAdGroupSchema,
-            id_column=['CampaignID', 'tempAdgroupID'],
+            id_column=['CampaignId', 'AdgroupId'],
             include_id_column=True)
 
 
@@ -217,7 +217,7 @@ def _prepare_create_campaign_data(path_csv):
     yield from validate_input_csv(
         path_csv,
         schema=CreateCampaignSchema,
-        id_column=["CampaignID"],
+        id_column=["CampaignId"],
         include_id_column=True)
 
 
@@ -277,7 +277,7 @@ def _campaign_data_into_db(campaign_data, conn):
     logging.debug("Inserting campaign data into tmp database")
     cursor = conn.cursor()
     for row in campaign_data:
-        cid = row.pop('CampaignID')
+        cid = row.pop('CampaignId')
         insert_campaign(cursor,
                         campaign_id=cid,
                         payload=row)
@@ -296,8 +296,8 @@ def _adgroup_data_into_db(adgroup_data, conn):
     logging.debug("Inserting adgroup data into tmp database")
     cursor = conn.cursor()
     for row in adgroup_data:
-        cid = row.pop('CampaignID')
-        adid = row.pop('tempAdgroupID')
+        cid = row.pop('CampaignId')
+        adid = row.pop('AdgroupId')
         insert_adgroup(cursor,
                        campaign_id=cid,
                        adgroup_id=adid,

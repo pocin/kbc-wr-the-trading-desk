@@ -18,12 +18,12 @@ def test_validating_creating_adgroup(valid_adgroup_csv, conn):
         "CurrencyCode": "USD"
     }
     expected = [{
-        "CampaignID": "temporary",
-        "tempAdgroupID": "tempA",
+        "CampaignId": "temporary",
+        "AdgroupId": "tempA",
         "AdGroupName": "Test adgroup",
         "Description": "Test adgroup desc",
         "IsEnabled": True,
-        "IndustryCategoryID": 42,
+        "IndustryCategoryId": 42,
         "RTBAttributes": {
             "BudgetSettings": {
                 "Budget": money,
@@ -45,12 +45,12 @@ def test_validating_creating_adgroup(valid_adgroup_csv, conn):
             }
         }
     }, {
-        "CampaignID": "temporary",
-        "tempAdgroupID": "tempB",
+        "CampaignId": "temporary",
+        "AdgroupId": "tempB",
         "AdGroupName": "Test adgroup2",
         "Description": "Test adgroup desc",
         "IsEnabled": True,
-        "IndustryCategoryID": 42,
+        "IndustryCategoryId": 42,
         "RTBAttributes": {
             "BudgetSettings": {
                 "Budget": money,
@@ -96,7 +96,7 @@ def test_creating_campaign_validation(valid_campaign_csv):
         "CurrencyCode": "USD"
     }
     expected = {
-        "CampaignID": "temporary",
+        "CampaignId": "temporary",
         "AdvertiserId": 42,
         "CampaignName": "TEST",
         "Description": "TEST",

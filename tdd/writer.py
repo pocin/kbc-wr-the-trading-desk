@@ -104,7 +104,7 @@ def create_adgroups(client, db):
     adgroups = tdd.models.query_adgroups(db, campaign_id=None)
     for adgrp in adgroups:
         payload = json.loads(adgrp['payload'])
-        payload['CampaignID'] = adgrp['campaign_id']
+        payload['CampaignId'] = adgrp['campaign_id']
         client.create_adgroup(payload)
 
 def create_campaigns(client, db):
@@ -124,4 +124,4 @@ def create_campaigns_and_adgroups(client, db):
             campaign_id=campaign_id)
         for adgroup in related_adgroups:
             adgroup_payload = json.loads(adgroup['payload'])
-            adgroup_payload['CampaignID'] = campaign_id
+            adgroup_payload['CampaignId'] = campaign_id

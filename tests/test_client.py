@@ -47,7 +47,7 @@ def test_building_urls():
 def test_client_fails_on_unauthorized_resource():
     endpoint = "category/industrycategories"
     client = BaseTDDClient(login="non", password="existing")
-    client.token = "INVALID"
+    client.token = "INVALId"
 
     # this makes an authorized GET without retry on failed refresh_token
     # we use request("GET") because client.get is overriden

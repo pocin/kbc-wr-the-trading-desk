@@ -30,11 +30,11 @@ def conn_with_records(tmpdir):
 @pytest.fixture
 def valid_adgroup_csv(tmpdir):
 
-    incsv_contents = """CampaignID,tempAdgroupID,path,value
+    incsv_contents = """CampaignId,AdgroupId,path,value
 temporary,tempA,AdGroupName,"Test adgroup"
 temporary,tempA,Description,"Test adgroup desc"
 temporary,tempA,IsEnabled,True
-temporary,tempA,IndustryCategoryID,42
+temporary,tempA,IndustryCategoryId,42
 temporary,tempA,RTBAttributes__BudgetSettings__Budget__Amount,1000
 temporary,tempA,RTBAttributes__BudgetSettings__Budget__CurrencyCode,USD
 temporary,tempA,RTBAttributes__BudgetSettings__DailyBudget__Amount,1000
@@ -60,7 +60,7 @@ temporary,tempA,RTBAttributes__AutoOptimizationSettings__IsAudienceAutoOptimizat
 temporary,tempB,AdGroupName,"Test adgroup2"
 temporary,tempB,Description,"Test adgroup desc"
 temporary,tempB,IsEnabled,True
-temporary,tempB,IndustryCategoryID,42
+temporary,tempB,IndustryCategoryId,42
 temporary,tempB,RTBAttributes__BudgetSettings__Budget__Amount,1000
 temporary,tempB,RTBAttributes__BudgetSettings__Budget__CurrencyCode,USD
 temporary,tempB,RTBAttributes__BudgetSettings__DailyBudget__Amount,1000
@@ -90,7 +90,7 @@ temporary,tempB,RTBAttributes__AutoOptimizationSettings__IsAudienceAutoOptimizat
 
 @pytest.fixture
 def valid_campaign_csv(tmpdir):
-    incsv_contents = '''CampaignID,path,value
+    incsv_contents = '''CampaignId,path,value
 temporary,AdvertiserId,42
 temporary,CampaignName,TEST
 temporary,Description,TEST

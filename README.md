@@ -33,11 +33,11 @@ check `tdd.models.CreateAdGroupSchema` for the schema which is being checked.
 This is a csv template
 
 ```
-CampaignID,tempAdgroupID,path,value
+CampaignId,AdgroupId,path,value
 42,whateverA,AdGroupName,"Test adgroup"
 42,whateverA,Description,"Test adgroup desc"
 42,whateverA,IsEnabled,True
-42,whateverA,IndustryCategoryID,42
+42,whateverA,IndustryCategoryId,42
 42,whateverA,RTBAttributes__BudgetSettings__Budget__Amount,1000
 42,whateverA,RTBAttributes__BudgetSettings__Budget__CurrencyCode,USD
 42,whateverA,RTBAttributes__BudgetSettings__DailyBudget__Amount,1000
@@ -65,12 +65,12 @@ CampaignID,tempAdgroupID,path,value
 which will be internally compiled into
 ```
 {
-        "CampaignID": "42",
-        "tempAdgroupID": "whateverA", #this is just a temporary placeholder and is not sent to the API!
+        "CampaignId": "42",
+        "AdgroupId": "whateverA", #this is just a temporary placeholder and is not sent to the API!
         "AdGroupName": "Test adgroup",
         "Description": "Test adgroup desc",
         "IsEnabled": True,
-        "IndustryCategoryID": 42,
+        "IndustryCategoryId": 42,
         "RTBAttributes": {
             "BudgetSettings": {
                 "Budget": money,
@@ -95,11 +95,11 @@ which will be internally compiled into
 ```
 
 
-the column `tempAdgroupID` is an arbitrary unique string grouping all rows for given `CampaignID-Adgroup` combination.  
+the column `AdgroupId` is an arbitrary unique string grouping all rows for given `CampaignId-Adgroup` combination.  
 e.g.: One campaign (id 42) can have multiple adgroups (`whateverA` and `whateverB`)
 
 ```
-CampaignID,tempAdgroupID,path,value
+CampaignId,AdgroupId,path,value
 42,whateverA,AdGroupName,"first adgroup for campaign 42"
 ...
 42,whateverA,RTBAttributes__AutoOptimizationSettings__IsAudienceAutoOptimizationEnabled,True
@@ -130,7 +130,7 @@ check `tdd.models.CreateCampaignSchema` for the schema which is being checked.
 
 This csv template
 ```
-CampaignID,path,value
+CampaignId,path,value
 temporary_but_unique,AdvertiserId,42
 temporary_but_unique,CampaignName,TEST
 temporary_but_unique,Description,TEST
@@ -147,7 +147,7 @@ would serialize into
 ```
 
 {
-  "CampaignID": "temporary_but_unique",
+  "CampaignId": "temporary_but_unique",
   "AdvertiserId": 42,
   "CampaignName": "TEST",
   "Description": "TEST",
@@ -168,16 +168,16 @@ At this point, serializing something into a a list of nested dictionaries is com
 For this reason, the `CampaignConversionReportingColumns` (an array of objects) is actually a json serialized into string (with all `"` double quotes properly escaped).  
 I.e. this string (a value in the csv column) `"{""TrackingTagId"": 2, ""ReportingColumnId"": 22}"` will be serialized into this object `{"TrackingTagId": 2, "ReportingColumnId": 22}"`
 
-The `CampaignID` is just a placeholder to group all the rows for given campaign together and is ignored.
+The `CampaignId` is just a placeholder to group all the rows for given campaign together and is ignored.
 
 
 ## Create campaign and adgroup
 This happens when both `/data/in/tables/create_campaign.csv` and `/data/in/tables/create_adgroup.csv` tables are present.
 This is the detailed workflow:
 
-1. Take a campaign (all rows with the same `CampaignID`) from `create_campaign.csv`. At this point the `CampaignID` doesn't exist and is just a dummy placeholder value (must be unique within the dataset, though)
-2. All adgroups (zero or more (more adgroups for one campaign are distinguished by the `tempAdgroupID` column)) with the same `CampaignID` from table `create_adgroup.csv` are fetched.
-3. Make an API request to create the Campaign. Use the returned `CampaignID` instead of the dummy one when making the requests to create the adgroups.
+1. Take a campaign (all rows with the same `CampaignId`) from `create_campaign.csv`. At this point the `CampaignId` doesn't exist and is just a dummy placeholder value (must be unique within the dataset, though)
+2. All adgroups (zero or more (more adgroups for one campaign are distinguished by the `AdgroupId` column)) with the same `CampaignId` from table `create_adgroup.csv` are fetched.
+3. Make an API request to create the Campaign. Use the returned `CampaignId` instead of the dummy one when making the requests to create the adgroups.
 
 # Development
 ## Run locally
