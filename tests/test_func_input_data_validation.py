@@ -2,78 +2,17 @@
 Sort of functional tests for parsing input
 
 """
-import pytest
 import json
+from pathlib import Path
+import pytest
 
 from tdd.models import _prepare_create_adgroup_data, _prepare_create_campaign_data
-import tdd.models
+import tdd.writer
 
 
-@pytest.fixture
-def conn(tmpdir):
-    db_path = tmpdir.join('tmp_master_database.sqlite3')
-    conn = tdd.models._init_database(db_path.strpath)
-    return conn
-
-def test_validating_creating_adgroup(tmpdir, conn):
+def test_validating_creating_adgroup(valid_adgroup_csv, conn):
     """One campaign can have multiple adgroups
     """
-    incsv_contents = """CampaignID,tempAdgroupID,path,value
-42,tempA,AdGroupName,"Test adgroup"
-42,tempA,Description,"Test adgroup desc"
-42,tempA,IsEnabled,True
-42,tempA,IndustryCategoryID,42
-42,tempA,RTBAttributes__BudgetSettings__Budget__Amount,1000
-42,tempA,RTBAttributes__BudgetSettings__Budget__CurrencyCode,USD
-42,tempA,RTBAttributes__BudgetSettings__DailyBudget__Amount,1000
-42,tempA,RTBAttributes__BudgetSettings__DailyBudget__CurrencyCode,USD
-42,tempA,RTBAttributes__BudgetSettings__PacingEnabled,True
-42,tempA,RTBAttributes__BaseBidCPM__CurrencyCode,USD
-42,tempA,RTBAttributes__BaseBidCPM__Amount,1000
-42,tempA,RTBAttributes__MaxBidCPM__CurrencyCode,USD
-42,tempA,RTBAttributes__MaxBidCPM__Amount,1000
-42,tempA,RTBAttributes__CreativeIds___0,12
-42,tempA,RTBAttributes__CreativeIds___1,12
-42,tempA,RTBAttributes__CreativeIds___2,12
-42,tempA,RTBAttributes__AudienceTargeting__AudienceId,666
-42,tempA,RTBAttributes__ROIGoal__CPAInAdvertiserCurrency__CurrencyCode,USD
-42,tempA,RTBAttributes__ROIGoal__CPAInAdvertiserCurrency__Amount,1000
-42,tempA,RTBAttributes__AutoOptimizationSettings__IsSiteAutoOptimizationEnabled,True
-42,tempA,RTBAttributes__AutoOptimizationSettings__IsUseClicksAsConversionsEnabled,True
-42,tempA,RTBAttributes__AutoOptimizationSettings__IsBaseBidAutoOptimizationEnabled,True
-42,tempA,RTBAttributes__AutoOptimizationSettings__IsUseSecondaryConversionsEnabled,True
-42,tempA,RTBAttributes__AutoOptimizationSettings__IsSupplyVendorAutoOptimizationEnabled,True
-42,tempA,RTBAttributes__AutoOptimizationSettings__IsCreativeAutoOptimizationEnabled,True
-42,tempA,RTBAttributes__AutoOptimizationSettings__IsAudienceAutoOptimizationEnabled,True
-42,tempB,AdGroupName,"Test adgroup2"
-42,tempB,Description,"Test adgroup desc"
-42,tempB,IsEnabled,True
-42,tempB,IndustryCategoryID,42
-42,tempB,RTBAttributes__BudgetSettings__Budget__Amount,1000
-42,tempB,RTBAttributes__BudgetSettings__Budget__CurrencyCode,USD
-42,tempB,RTBAttributes__BudgetSettings__DailyBudget__Amount,1000
-42,tempB,RTBAttributes__BudgetSettings__DailyBudget__CurrencyCode,USD
-42,tempB,RTBAttributes__BudgetSettings__PacingEnabled,True
-42,tempB,RTBAttributes__BaseBidCPM__CurrencyCode,USD
-42,tempB,RTBAttributes__BaseBidCPM__Amount,1000
-42,tempB,RTBAttributes__MaxBidCPM__CurrencyCode,USD
-42,tempB,RTBAttributes__MaxBidCPM__Amount,1000
-42,tempB,RTBAttributes__CreativeIds___0,12
-42,tempB,RTBAttributes__CreativeIds___1,12
-42,tempB,RTBAttributes__CreativeIds___2,12
-42,tempB,RTBAttributes__AudienceTargeting__AudienceId,666
-42,tempB,RTBAttributes__ROIGoal__CPAInAdvertiserCurrency__CurrencyCode,USD
-42,tempB,RTBAttributes__ROIGoal__CPAInAdvertiserCurrency__Amount,1000
-42,tempB,RTBAttributes__AutoOptimizationSettings__IsSiteAutoOptimizationEnabled,True
-42,tempB,RTBAttributes__AutoOptimizationSettings__IsUseClicksAsConversionsEnabled,True
-42,tempB,RTBAttributes__AutoOptimizationSettings__IsBaseBidAutoOptimizationEnabled,True
-42,tempB,RTBAttributes__AutoOptimizationSettings__IsUseSecondaryConversionsEnabled,True
-42,tempB,RTBAttributes__AutoOptimizationSettings__IsSupplyVendorAutoOptimizationEnabled,True
-42,tempB,RTBAttributes__AutoOptimizationSettings__IsCreativeAutoOptimizationEnabled,True
-42,tempB,RTBAttributes__AutoOptimizationSettings__IsAudienceAutoOptimizationEnabled,True"""
-    incsv = tmpdir.join('input.csv')
-    incsv.write(incsv_contents)
-
     money = {
         "Amount": 1000.0,
         "CurrencyCode": "USD"
@@ -135,7 +74,7 @@ def test_validating_creating_adgroup(tmpdir, conn):
     }
     ]
 
-    adgroups = list(_prepare_create_adgroup_data(incsv.strpath))
+    adgroups = list(_prepare_create_adgroup_data(valid_adgroup_csv))
     assert (adgroups[0] == expected[0]) or (adgroups[0] == expected[1])
     assert (adgroups[1] == expected[0]) or (adgroups[1] == expected[1])
 
@@ -149,23 +88,8 @@ def test_validating_creating_adgroup(tmpdir, conn):
             assert json.loads(adgrp['payload'])["Description"] == "Test adgroup desc"
 
 
-def test_creating_campaign_validation(tmpdir):
+def test_creating_campaign_validation(valid_campaign_csv):
 
-    incsv_contents = '''CampaignID,path,value
-temporary,AdvertiserId,42
-temporary,CampaignName,TEST
-temporary,Description,TEST
-temporary,Budget__Amount,1000
-temporary,Budget__CurrencyCode,USD
-temporary,DailyBudget__Amount,1000
-temporary,DailyBudget__CurrencyCode,USD
-temporary,StartDate,2017
-temporary,EndDate,2017
-temporary,CampaignConversionReportingColumns___0,"{""TrackingTagId"": 1, ""ReportingColumnId"": 11}"
-temporary,CampaignConversionReportingColumns___1,"{""TrackingTagId"": 1, ""ReportingColumnId"": 11}"
-'''
-    incsv = tmpdir.join('input.csv')
-    incsv.write(incsv_contents)
 
     money = {
         "Amount": 1000.0,
@@ -188,10 +112,24 @@ temporary,CampaignConversionReportingColumns___1,"{""TrackingTagId"": 1, ""Repor
         ]
     }
 
-    # Either jsontangle must parse nested jsons 
+    # Either jsontangle must parse nested jsons
     # OR the nested json will be a string and Voluptuos schema will load the json
 
     # Depends if the nested jsons need to be dynamic or static?
 
-    for campaign in _prepare_create_campaign_data(incsv.strpath):
+    for campaign in _prepare_create_campaign_data(valid_campaign_csv):
         assert campaign == expected
+
+def test_func_loading_adgroup_data(valid_adgroup_csv, tmpdir):
+    datadir = Path(valid_adgroup_csv).parent
+
+    db = tdd.writer.prepare_data(datadir, db_path=tmpdir.join('db.sqlite3').strpath)
+
+    # at this point I expect a database to have serialized adgroup data
+    # but empty campaigns
+
+    with db:
+        adgroups = db.execute("SELECT * FROM adgroups").fetchall()
+        assert len(adgroups) == 2
+        assert adgroups[0]['campaign_id'] == '42'
+

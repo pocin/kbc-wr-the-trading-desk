@@ -2,26 +2,6 @@ import json
 import pytest
 import tdd.models
 
-@pytest.fixture
-def conn(tmpdir):
-    db_path = tmpdir.join('tmp_master_database.sqlite3')
-    conn = tdd.models._init_database(db_path.strpath)
-    return conn
-
-@pytest.fixture
-def conn_with_records(tmpdir):
-    db_path = tmpdir.join('tmp_master_database.sqlite3')
-    conn = tdd.models._init_database(db_path.strpath)
-
-    curr = conn.cursor()
-    payload = {"foo": "bar", "baz": 42}
-    tdd.models.insert_campaign(curr, 'campA', payload)
-    tdd.models.insert_adgroup(curr, 'campA', 'adgrpA', payload)
-    tdd.models.insert_adgroup(curr, 'campA', 'adgrpB', payload)
-    tdd.models.insert_adgroup(curr, 'campA', 'adgrpC', payload)
-    conn.commit()
-    return conn
-
 
 def test_creating_tables(tmpdir):
     db_path = tmpdir.join('tmp_database.sqlite3')

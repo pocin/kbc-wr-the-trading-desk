@@ -25,44 +25,39 @@ def _main(datadir):
         logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     path_csv_log = _datadir / 'out/tables/tdd_writer_log.csv'
 
-    writer = TDDWriter(login=params['login'],
-                       password=params['#password'],
-                       path_csv_log=path_csv_log)
+    client = KBCTDDClient(login=params['login'],
+                          password=params['#password'],
+                          path_csv_log=path_csv_log)
+
+
+
+def prepare_data(intables, db_path='/tmp/tdd_writer_database.sqlite3'):
+    """
+    Load csvs
+    Serialize to json
+    Validate
+    Prepare database
+    Load into db
+
+    return connection to database
+
+    once this function is finished we can be certain that the data is correct (to the extent covered by the defined schemas)
+
+    """
+    logging.info("Preparing input data")
+    db_conn = tdd.models._init_database(path=db_path)
 
     path_campaigns = intables / 'create_campaigns.csv'
-    # TODO: maybe we actually need to load it into memory
-    # to match campaigns and adgroups based on common ID (hash)?
-    campaign_data = tdd.models._prepare_create_campaign_data(path_campaigns)
+    if path_campaigns.is_file():
+        logging.info("Preparing campaign data %s", path_campaigns)
+        campaign_data = tdd.models._prepare_create_campaign_data(path_campaigns)
+        tdd.models._campaign_data_into_db(campaign_data, db_conn)
 
-    path_adgroup = intables / 'crate_adgroup.csv'
-    # at this point the adgroup code doesn't contain the campaign id
-    # (which is unknown, yet)
-    logging.info("Validating AdGroup input @ %s", path_adgroup)
-    for _ in writer.validate_adgroup_input(path_adgroup):
-        pass
-    logging.info("AdGroup input seems to be OK")
+    path_adgroup = intables / 'create_adgroups.csv'
+    logging.debug("looking for tables in %s", intables)
+    if path_adgroup.is_file():
+        logging.info("Preparing adgroup data %s", path_adgroup)
+        adgroup_data = tdd.models._prepare_create_adgroup_data(path_adgroup)
+        tdd.models._adgroup_data_into_db(adgroup_data, db_conn)
 
-    # TODO: how to actually link campaign to adgroup[s] (is this 1:N?)
-    # in original tables?
-
-class TDDWriter(KBCTDDClient):
-    """
-    Implements
-    - config file processing logic
-    - partial input validation
-    """
-
-    def create_campaign(self):
-        # TODO: ignore campaign ID if present
-        raise NotImplementedError()
-
-    def create_adgroup(self):
-        raise NotImplementedError()
-    def create_campaign_and_adgroup(self, campaign_payload, adgroup_payload):
-        """
-        This expects that adgroup_payload is actually valid
-
-        """
-        new_campaign = self.create_campaign(campaign_payload)
-        adgroup_payload['CampaignID'] = new_campaign['CampaignID']
-        self.create_adgroup(adgroup_payload)
+    return db_conn
