@@ -60,8 +60,13 @@ def test_querying_campaigns(conn_with_records):
 
 
 def test_querying_adgroups(conn_with_records):
-    adgroups = tdd.models.query_adgroups(conn_with_records, campaign_id='campA')
+    adgroups = list(tdd.models.query_adgroups(conn_with_records, campaign_id='campA'))
+    assert len(adgroups) == 3
     for adgroup in adgroups:
         assert adgroup['campaign_id'] == 'campA'
         assert adgroup['adgroup_id'] in ("adgrpA", "adgrpB", "adgrpC")
         assert adgroup['payload'] is not None
+
+def test_querying_all_adgroups(conn_with_records):
+    adgroups = list(tdd.models.query_adgroups(conn_with_records, campaign_id=None))
+    assert len(adgroups) == 4

@@ -22,6 +22,7 @@ def conn_with_records(tmpdir):
     tdd.models.insert_adgroup(curr, 'campA', 'adgrpA', payload)
     tdd.models.insert_adgroup(curr, 'campA', 'adgrpB', payload)
     tdd.models.insert_adgroup(curr, 'campA', 'adgrpC', payload)
+    tdd.models.insert_adgroup(curr, 'campB', 'adgrpX', payload)
     conn.commit()
     return conn
 

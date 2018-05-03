@@ -186,7 +186,7 @@ class KBCTDDClient(TDDClient):
         # don't know how to hook this up to a context manager (we already have one)
 
     def init_logging(self, log_path):
-        csv_logger = logging.getLogger(__name__)
+        csv_logger = logging.getLogger('cdc_logger')
         handler = logging.FileHandler(log_path, 'w')
         self.csv_log_header = ["timestamp", "http_status", "response"]
         handler.setFormatter(
@@ -213,4 +213,4 @@ class KBCTDDClient(TDDClient):
     def _request(self, method, url, *args, **kwargs):
         resp = super()._request(method, url, *args, **kwargs)
         self.log_response(resp)
-        return resp.json()
+        return resp

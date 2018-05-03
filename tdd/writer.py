@@ -2,6 +2,7 @@
 KBC Related stuff
 
 """
+import json
 import logging
 import sys
 from pathlib import Path
@@ -99,10 +100,27 @@ def prepare_data(intables, db_path='/tmp/tdd_writer_database.sqlite3'):
     return db_conn
 
 def create_adgroups(client, db):
-    pass
+    adgroups = tdd.models.query_adgroups(db, campaign_id=None)
+    for adgrp in adgroups:
+        payload = json.loads(adgrp['payload'])
+        payload['CampaignID'] = adgrp['campaign_id']
+        client.create_adgroup(payload)
 
 def create_campaigns(client, db):
-    pass
+    campaigns = tdd.models.query_campaigns(db)
+    for campaign in campaigns:
+        payload = json.loads(campaign['payload'])
+        client.create_campaign(payload)
 
 def create_campaigns_and_adgroups(client, db):
-    pass
+    campaigns = tdd.models.query_campaigns(db)
+    for campaign in campaigns:
+        campaign_payload = json.loads(campaign['payload'])
+        campaign_id = campaign['campaign_id']
+        client.create_campaign(campaign_payload)
+        related_adgroups = tdd.models.query_adgroups(
+            db,
+            campaign_id=campaign_id)
+        for adgroup in related_adgroups:
+            adgroup_payload = json.loads(adgroup['payload'])
+            adgroup_payload['CampaignID'] = campaign_id

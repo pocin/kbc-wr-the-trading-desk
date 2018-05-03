@@ -57,6 +57,7 @@ def test_every__request_is_logged(tmpdir):
                           path_csv_log=log.strpath,
                           base_url=None)
 
+    # prevent fetching a token
     client.token = 'fake'
     resp = client._request("GET", 'https://httpbin.org/get', params={'foo':'bar'})
 

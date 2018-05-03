@@ -312,9 +312,14 @@ def query_campaigns(conn):
         yield row
 
 
-def query_adgroups(conn, campaign_id):
-    q = """SELECT * FROM adgroups WHERE campaign_id=?;"""
-
-    cursor = conn.cursor()
-    for row in cursor.execute(q, (campaign_id, )):
-        yield row
+def query_adgroups(conn, campaign_id=None):
+    if campaign_id is not None:
+        q = """SELECT * FROM adgroups WHERE campaign_id=?;"""
+        cursor = conn.cursor()
+        for row in cursor.execute(q, (campaign_id, )):
+            yield row
+    else:
+        q = """SELECT * FROM adgroups;"""
+        cursor = conn.cursor()
+        for row in cursor.execute(q):
+            yield row
