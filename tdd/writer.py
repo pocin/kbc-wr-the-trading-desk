@@ -42,7 +42,8 @@ def _main(datadir):
 
     db = prepare_data(intables)
     final_action = decide_action(intables)
-    final_action(client, db)
+    with client:
+        final_action(client, db)
 
 def decide_action(intables):
     tables = set(os.listdir(str(intables)))
