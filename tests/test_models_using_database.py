@@ -17,13 +17,13 @@ def test_creating_tables(tmpdir):
 def test_inserting_campaign(conn):
     curr = conn.cursor()
     payload = {"foo": "bar"}
-    inserted = tdd.models.insert_campaign(curr, '42', payload)
+    inserted = tdd.models.insert_campaign(curr, 'temporary', payload)
     conn.commit()
 
     curr = conn.cursor()
     curr.execute("SELECT * FROM campaigns")
     campaign = curr.fetchone()
-    assert campaign['campaign_id'] == '42'
+    assert campaign['campaign_id'] == 'temporary'
     assert campaign['payload'] == '{"foo": "bar"}'
     assert json.loads(campaign['payload']) == {"foo": "bar"}
 
@@ -31,16 +31,16 @@ def test_inserting_campaign(conn):
 def test_inserting_adgroup(conn):
     curr = conn.cursor()
     payload = {"foo": "bar", "baz": 42}
-    tdd.models.insert_adgroup(curr, '42', 'tempA', payload)
-    tdd.models.insert_adgroup(curr, '42', 'tempB', payload)
+    tdd.models.insert_adgroup(curr, 'temporary', 'tempA', payload)
+    tdd.models.insert_adgroup(curr, 'temporary', 'tempB', payload)
     conn.commit()
 
     curr = conn.cursor()
     curr.execute("SELECT * FROM adgroups ORDER BY adgroup_id;")
     ada, adb = curr.fetchall()
 
-    assert ada['campaign_id'] == '42'
-    assert adb['campaign_id'] == '42'
+    assert ada['campaign_id'] == 'temporary'
+    assert adb['campaign_id'] == 'temporary'
 
     assert ada['adgroup_id'] == 'tempA'
     assert adb['adgroup_id'] == 'tempB'

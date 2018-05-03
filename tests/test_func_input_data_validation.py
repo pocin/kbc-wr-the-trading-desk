@@ -18,7 +18,7 @@ def test_validating_creating_adgroup(valid_adgroup_csv, conn):
         "CurrencyCode": "USD"
     }
     expected = [{
-        "CampaignID": "42",
+        "CampaignID": "temporary",
         "tempAdgroupID": "tempA",
         "AdGroupName": "Test adgroup",
         "Description": "Test adgroup desc",
@@ -45,7 +45,7 @@ def test_validating_creating_adgroup(valid_adgroup_csv, conn):
             }
         }
     }, {
-        "CampaignID": "42",
+        "CampaignID": "temporary",
         "tempAdgroupID": "tempB",
         "AdGroupName": "Test adgroup2",
         "Description": "Test adgroup desc",
@@ -131,7 +131,7 @@ def test_func_loading_adgroup_data(valid_adgroup_csv, tmpdir):
     with db:
         adgroups = db.execute("SELECT * FROM adgroups").fetchall()
         assert len(adgroups) == 2
-        assert adgroups[0]['campaign_id'] == '42'
+        assert adgroups[0]['campaign_id'] == 'temporary'
         campaigns = db.execute("SELECT * FROM campaigns").fetchall()
         assert len(campaigns) == 0
 
@@ -150,3 +150,20 @@ def test_func_loading_campaign_data(valid_campaign_csv, tmpdir):
         assert campaigns[0]['campaign_id'] == 'temporary'
         adgroups = db.execute("SELECT * FROM adgroups").fetchall()
         assert len(adgroups) == 0
+
+def test_func_loading_campaign_and_adgroup_data(valid_campaign_csv,
+                                                valid_adgroup_csv,
+                                                tmpdir):
+
+    datadir = Path(valid_campaign_csv).parent
+
+    db = tdd.writer.prepare_data(datadir, db_path=tmpdir.join('db.sqlite3').strpath)
+
+    with db:
+        campaigns = db.execute("SELECT * FROM campaigns").fetchall()
+        assert len(campaigns) == 1
+        assert campaigns[0]['campaign_id'] == 'temporary'
+        adgroups = db.execute("SELECT * FROM adgroups").fetchall()
+        assert len(adgroups) == 2
+        assert adgroups[0]['campaign_id'] == 'temporary'
+        assert adgroups[0]['adgroup_id'] in ('tempA','tempB')
