@@ -1,13 +1,17 @@
-# The trading desk writer
+# The trading desk writer (STILL UNDER HEAVY DEV)
 
 Can create campaigns and adgroups
 
 # Configuration
 ```javascript
 {
-  "debug": true
+  "debug": true,
+  "dry_run": true,
+  "login": "foo",
+  "#password": "foo"
 }
 ```
+set `dry_run` to `True` if you just want to test that your input tables will serialize without making any api calls.
 
 The writer behavior is driven by the input tables you provide.
 The TDD api accepts some deeply nested JSONs. However this component accepts data in `csv` format ([the KBC common interface](https://developers.keboola.com/extend/common-interface/folders/)).
@@ -19,6 +23,8 @@ The writer currently supports these operations.
 - Creating campaigns
 - Creating adgroups
 - Creating campaign immediately followed by creating adgroup for the new id
+- TODO: Updating existing campaign
+- TODO: Updating existing adgroup
 
 In general, the writer behavior is as follows:
 1. load the input tables

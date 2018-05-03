@@ -42,6 +42,9 @@ def _main(datadir):
 
     db = prepare_data(intables)
     final_action = decide_action(intables)
+    if params.get('dry_run'):
+        logging.info("exitting, dry_run == True!")
+        return
     with client:
         final_action(client, db)
 
