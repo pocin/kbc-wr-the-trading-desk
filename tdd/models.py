@@ -153,7 +153,7 @@ CreateCampaignSchema = vp.Schema(
         "DailyBudget": reusable_dtypes['_money'],
         "StartDate": str, # Coerce to datetimes
         "EndDate": str, # Coerce to datetimes
-        vp.Optional("CampaignConversionReportingColumns"): vp.Any([], [_CampaignReportingColumns])
+        "CampaignConversionReportingColumns": vp.Any([], [_CampaignReportingColumns])
     },
     extra=True,
     required=True)
