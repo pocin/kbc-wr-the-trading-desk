@@ -5,11 +5,16 @@ communicate
 """
 import logging
 from urllib.parse import urljoin
+from hashlib import md5
+import sys
+import time
 from io import StringIO
 import requests
 import csv
 
 from tdd.exceptions import TDDConfigError
+
+logger = logging.getLogger(__name__)
 
 class BaseTDDClient(requests.Session):
     """
@@ -54,15 +59,15 @@ class BaseTDDClient(requests.Session):
     @token.setter
     def token(self, new_token):
         """Set access token + update auth headers"""
-        logging.debug("Setting new access token")
+        logger.debug("Setting new access token")
         self._token = new_token
 
-        logging.debug("Updating TTD-Auth header")
+        logger.debug("Updating TTD-Auth header")
         self.headers.update({"TTD-Auth": new_token})
 
     def _refresh_token(self, expires_in=90):
 
-        logging.debug("Getting new access token")
+        logger.debug("Getting new access token")
         data = {
             "Login": self._login,
             "Password": self._password,
@@ -73,8 +78,8 @@ class BaseTDDClient(requests.Session):
         try:
             resp.raise_for_status()
         except requests.HTTPError as err:
-            logging.error(err)
-            logging.error(resp.text)
+            logger.error(err)
+            logger.error(resp.text)
             if err.response.status_code == 401:
                 raise TDDConfigError(resp.text)
             else:
@@ -98,18 +103,18 @@ class BaseTDDClient(requests.Session):
         except requests.HTTPError as err:
             if err.response.status_code == 403:
                 # token expired
-                logging.debug("Token expired or invalid, trying again")
+                logger.debug("Token expired or invalid, trying again")
                 self._refresh_token()
                 try:
                     resp2 = self.request(method, url, *args, **kwargs)
                     resp2.raise_for_status()
                 except requests.HTTPError as err:
-                    logging.error(err.response.text)
+                    logger.error(err.response.text)
                     raise
                 else:
                     return resp2
             else:
-                logging.error(err.response.text)
+                logger.error(err.response.text)
                 raise
         else:
             return resp
@@ -182,19 +187,33 @@ class KBCTDDClient(TDDClient):
         """
         super().__init__(login, password, token_expires_in=token_expires_in, base_url=base_url)
         self.path_csv_log = path_csv_log
-        self.csv_logger = self.init_logging(path_csv_log)
+        self.cdc_logger = self.init_cdc_logging(path_csv_log)
         # don't know how to hook this up to a context manager (we already have one)
 
-    def init_logging(self, log_path):
-        csv_logger = logging.getLogger('cdc_logger')
-        handler = logging.FileHandler(log_path, 'w')
-        self.csv_log_header = ["timestamp", "http_status", "response"]
-        handler.setFormatter(
-            logging.Formatter('%(asctime)s,%(resp_status)s,%(message)s',
-                              datefmt='%Y-%m-%dT%H:%M:%S'))
-        csv_logger.addHandler(handler)
-        csv_logger.setLevel(logging.INFO)
-        return csv_logger
+    def init_cdc_logging(self, log_path):
+        """
+        We want to log every response to a csv and stdout/err
+        """
+        cdc_logger = logging.getLogger(__name__ + '_cdc')
+        cdc_logger.propagate = False
+        # all requests are logged in csv
+        self.csv_log_header = ["type","timestamp", "pk", "http_status", "url",
+                               "request", "response"]
+        csv_formatter = logging.Formatter('%(name)s,%(asctime)s,%(pk)s,%(http_status)s,'
+                                          '%(url)s,%(request_body)s,%(message)s',
+                                          datefmt='%Y-%m-%dT%H:%M:%S')
+
+        csv_handler = logging.FileHandler(log_path, 'w')
+        csv_handler.setFormatter(csv_formatter)
+
+        # all requests are logged to stdout as well (kbc logs)
+        stdout_handler = logging.StreamHandler(stream=sys.stdout)
+        stdout_handler.setFormatter(csv_formatter)
+
+        cdc_logger.addHandler(stdout_handler)
+        cdc_logger.addHandler(csv_handler)
+        cdc_logger.setLevel(logging.INFO)
+        return cdc_logger
 
     @staticmethod
     def _csv_quote(text):
@@ -207,10 +226,27 @@ class KBCTDDClient(TDDClient):
         """csv-escape given text and write to the csv log
 
         """
-        self.csv_logger.info(self._csv_quote(resp.text),
-                             extra={'resp_status':resp.status_code})
+        self.cdc_logger.info(self._csv_quote(resp.text),
+                             extra={
+                                 'http_status': resp.status_code,
+                                 'pk': self._make_pk_from_response(resp),
+                                 'url': resp.url,
+                                 'request_body': resp.request.body or ''
+                             })
+
+    @staticmethod
+    def _make_pk_from_response(resp):
+        return md5(resp.request.body or b'' + str(time.time()).encode('ascii')).hexdigest()
 
     def _request(self, method, url, *args, **kwargs):
-        resp = super()._request(method, url, *args, **kwargs)
-        self.log_response(resp)
-        return resp
+        try:
+            resp = super()._request(method, url, *args, **kwargs)
+        except requests.HTTPError as err:
+            # I think this will ultimately double log the errors, but
+            # it quite makes sense. As the root logger doesn't know about
+            # cdc logger at all
+            self.log_response(err.response)
+            raise
+        else:
+            self.log_response(resp)
+            return resp

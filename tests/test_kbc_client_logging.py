@@ -12,8 +12,9 @@ from collections import namedtuple
 from io import StringIO
 import requests
 import pytest
-
+import logging
 from tdd.client import KBCTDDClient
+
 
 def test_csv_quoting():
     tests = [
@@ -23,32 +24,36 @@ def test_csv_quoting():
     for txt, expected in tests:
         assert KBCTDDClient._csv_quote(txt) == expected
 
-def test_csv_logging_json_string(tmpdir, caplog):
+def test_logging_into_csv_and_stdout(tmpdir, caplog):
+    """Check that the logging function sends the request/response to
+    csv and stream!"""
     log = tmpdir.join('sample_log.csv')
 
     client = KBCTDDClient(login='foo', password='bar', path_csv_log=log.strpath)
 
-    Response = namedtuple("Response", "status_code, text")
-    resp = Response(200, '["Hello, world!"]')
+    class Resp:
+        pass
+    resp = Resp()
+    resp.url = 'this_is_url'
+    resp.status_code = 200
+    resp.request = Resp()
+    resp.request.body = b'bodyyy'
+    resp.text = 'bodyyy'
     client.log_response(resp)
 
-    log_content = log.read()
-    rdr = csv.DictReader(StringIO(log.read()), fieldnames=client.csv_log_header)
-    line = next(rdr)
-    assert json.loads(line['response']) == ['Hello, world!']
-    assert line['http_status'] == "200"
+    # logging to csv file
+    # there should be one record
+    lines = list(csv.DictReader(StringIO(log.read()), fieldnames=client.csv_log_header))
 
-def test_csv_logging_json(tmpdir, caplog):
-    log = tmpdir.join('sample_log.csv')
+    assert len(lines) == 1
+    assert lines[0]['url'] == resp.url
 
-    client = KBCTDDClient(login='foo', password='bar', path_csv_log=log.strpath)
-
-    Response = namedtuple("Response", "status_code, text")
-    resp = Response(200, '["Hello, world!"]')
-    client.log_response(resp)
-    log_content = log.read()
-    assert log_content.endswith('200,"[""Hello, world!""]"\n')
-
+    # stdout should have just 1 record! previous errors due to the propagate
+    # this is something in the root logger (which is not defined anywhere)
+    # but the log is magically appearing there!
+    assert 'client.py                  233 INFO     bodyyy\n' not in caplog.text
+    # since the tdd.client_cdc logger has propagate False it doesn't get captured
+    # assert len(caplog.records) == 1
 
 def test_every__request_is_logged(tmpdir):
     log = tmpdir.join('sample_log.csv')
@@ -59,13 +64,12 @@ def test_every__request_is_logged(tmpdir):
 
     # prevent fetching a token
     client.token = 'fake'
-    resp = client._request("GET", 'https://httpbin.org/get', params={'foo':'bar'})
-
+    url = 'https://httpbin.org/post'
+    resp = client._request("POST", url, json={'foo':'bar'})
     log_content = log.read()
     rdr = csv.DictReader(StringIO(log.read()), fieldnames=client.csv_log_header)
     line = next(rdr)
-    resp_json = json.loads(line['response'])
-    assert resp_json['args'] == {'foo':'bar'}
-    assert resp_json['headers']['Ttd-Auth'] == 'fake'
+    assert line['url'] == url
+    assert line['http_status'] == '200'
     with pytest.raises(StopIteration):
         next(rdr)

@@ -11,11 +11,13 @@ from tdd.client import KBCTDDClient
 import tdd.models
 from keboola.docker import Config
 
+logger = logging.getLogger(__name__)
+
 FNAME_ADGROUPS = 'create_adgroups.csv'
 FNAME_CAMPAIGNS = 'create_campaigns.csv'
 
 def main():
-    logging.info("Hello, world!")
+    logger.info("Hello, world!")
 
 
 
@@ -37,7 +39,7 @@ def _main(datadir):
     db = prepare_data(intables)
     final_action = decide_action(intables)
     if params.get('dry_run'):
-        logging.info("exitting, dry_run == True!")
+        logger.info("exitting, dry_run == True!")
         return
     with client:
         final_action(client, db)
@@ -45,19 +47,19 @@ def _main(datadir):
 def decide_action(intables):
     tables = set(os.listdir(str(intables)))
     if FNAME_ADGROUPS in tables and FNAME_CAMPAIGNS in tables:
-        logging.info("Bound both '%s' and '%s'. "
+        logger.info("Bound both '%s' and '%s'. "
                      "Will create campaigns and their adgroups afterwards",
                      FNAME_ADGROUPS,
                      FNAME_CAMPAIGNS)
         return create_campaigns_and_adgroups
 
     elif FNAME_ADGROUPS in tables:
-        logging.info("Found only '%s' Will create only adgroups",
+        logger.info("Found only '%s' Will create only adgroups",
                      FNAME_ADGROUPS)
         return create_adgroups
 
     elif FNAME_CAMPAIGNS in tables:
-        logging.info("Found only '%s' Will create only campaigns",
+        logger.info("Found only '%s' Will create only campaigns",
                      FNAME_CAMPAIGNS)
         return create_campaigns
     else:
@@ -80,18 +82,18 @@ def prepare_data(intables, db_path='/tmp/tdd_writer_database.sqlite3'):
     once this function is finished we can be certain that the data is correct (to the extent covered by the defined schemas)
 
     """
-    logging.info("Preparing input data")
+    logger.info("Preparing input data")
     db_conn = tdd.models._init_database(path=db_path)
 
     path_campaigns = intables / FNAME_CAMPAIGNS
     if path_campaigns.is_file():
-        logging.info("Preparing campaign data %s", path_campaigns)
+        logger.info("Preparing campaign data %s", path_campaigns)
         campaign_data = tdd.models._prepare_create_campaign_data(path_campaigns)
         tdd.models._campaign_data_into_db(campaign_data, db_conn)
 
     path_adgroup = intables / FNAME_ADGROUPS
     if path_adgroup.is_file():
-        logging.info("Preparing adgroup data %s", path_adgroup)
+        logger.info("Preparing adgroup data %s", path_adgroup)
         adgroup_data = tdd.models._prepare_create_adgroup_data(path_adgroup)
         tdd.models._adgroup_data_into_db(adgroup_data, db_conn)
 

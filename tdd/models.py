@@ -39,6 +39,7 @@ import jsontangle
 import logging
 from tdd.exceptions import TDDConfigError
 
+logger = logging.getLogger(__name__)
 
 def _column_to_row_format(values, id_columns=None):
     """
@@ -77,7 +78,7 @@ def csv_to_json(io, id_column, include_id_column=True):
         id_column (list): a list of column[s] upon which the group by will be performed.
     """
 
-    logging.info("Parsing %s", io)
+    logger.info("Parsing %s", io)
     if not isinstance(id_column, list):
         raise TDDConfigError("Must specify a list of id_column on which to perform group by")
     else:
@@ -223,12 +224,12 @@ def _prepare_create_campaign_data(path_csv):
 
 
 def _init_database(path='/tmp/tddwriter_data.sqlite3', overwrite=True):
-    logging.debug("Creating database for storing parsed data")
+    logger.debug("Creating database for storing parsed data")
     if overwrite:
         try:
             os.remove(path)
         except OSError:
-            logging.debug("%s exists, overwriting!", path)
+            logger.debug("%s exists, overwriting!", path)
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     _create_tables(conn)
@@ -274,7 +275,7 @@ def _campaign_data_into_db(campaign_data, conn):
 
 
     """
-    logging.debug("Inserting campaign data into tmp database")
+    logger.debug("Inserting campaign data into tmp database")
     cursor = conn.cursor()
     for row in campaign_data:
         cid = row.pop('CampaignId')
@@ -293,7 +294,7 @@ def _adgroup_data_into_db(adgroup_data, conn):
         conn: a connection to the database
 
     """
-    logging.debug("Inserting adgroup data into tmp database")
+    logger.debug("Inserting adgroup data into tmp database")
     cursor = conn.cursor()
     for row in adgroup_data:
         cid = row.pop('CampaignId')

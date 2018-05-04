@@ -2,8 +2,6 @@ import pytest
 import tdd.models
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
-
 
 @pytest.fixture
 def conn(tmpdir):
