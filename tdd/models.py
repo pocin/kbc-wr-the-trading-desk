@@ -37,7 +37,7 @@ import voluptuous as vp
 from collections import defaultdict
 import jsontangle
 import logging
-from tdd.exceptions import TDDConfigError
+from tdd.exceptions import TTDConfigError
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +80,7 @@ def csv_to_json(io, id_column, include_id_column=True):
 
     logger.info("Parsing %s", io)
     if not isinstance(id_column, list):
-        raise TDDConfigError("Must specify a list of id_column on which to perform group by")
+        raise TTDConfigError("Must specify a list of id_column on which to perform group by")
     else:
         pk = itemgetter(*id_column)
     with open(io, 'r') as fin:
@@ -88,7 +88,7 @@ def csv_to_json(io, id_column, include_id_column=True):
         REQUIRED_COLUMNS = ['path', 'value'] + id_column
         for col in REQUIRED_COLUMNS:
             if col not in reader.fieldnames:
-                raise TDDConfigError("the file '{}' must include column '{}'".format(io, col))
+                raise TTDConfigError("the file '{}' must include column '{}'".format(io, col))
         rows = sorted(reader, key=pk)
         for pk, values in groupby(rows, pk):
             cleaned_values = _column_to_row_format(values, id_column if include_id_column else None)

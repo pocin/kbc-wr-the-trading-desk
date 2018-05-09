@@ -2,7 +2,7 @@ import pytest
 
 from voluptuous import Schema, Coerce, Invalid
 import tdd.models
-from tdd.exceptions import TDDConfigError
+from tdd.exceptions import TTDConfigError
 
 def _prepare_incsv(tmpdir, csv_contents):
 
@@ -17,7 +17,7 @@ def test_parsing_csv_raises_on_missing_column(tmpdir):
         """id,missing,value
 1,"Robin",42
 1,Ahoj,666""")
-    with pytest.raises(TDDConfigError):
+    with pytest.raises(TTDConfigError):
         list(tdd.models.csv_to_json(csv_infile.strpath, id_column=['id']))
 
 def test_parsing_and_validating_csv_no_id_column(tmpdir):

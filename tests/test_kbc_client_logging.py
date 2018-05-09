@@ -13,7 +13,7 @@ from io import StringIO
 import requests
 import pytest
 import logging
-from tdd.client import KBCTDDClient
+from tdd.client import KBCTTDClient
 
 
 def test_csv_quoting():
@@ -22,14 +22,14 @@ def test_csv_quoting():
         (32, "32")
     ]
     for txt, expected in tests:
-        assert KBCTDDClient._csv_quote(txt) == expected
+        assert KBCTTDClient._csv_quote(txt) == expected
 
 def test_logging_into_csv_and_stdout(tmpdir, caplog):
     """Check that the logging function sends the request/response to
     csv and stream!"""
     log = tmpdir.join('sample_log.csv')
 
-    client = KBCTDDClient(login='foo', password='bar', path_csv_log=log.strpath)
+    client = KBCTTDClient(login='foo', password='bar', path_csv_log=log.strpath)
 
     class Resp:
         pass
@@ -58,7 +58,7 @@ def test_logging_into_csv_and_stdout(tmpdir, caplog):
 def test_every__request_is_logged(tmpdir):
     log = tmpdir.join('sample_log.csv')
 
-    client = KBCTDDClient(login='foo', password='bar',
+    client = KBCTTDClient(login='foo', password='bar',
                           path_csv_log=log.strpath,
                           base_url=None)
 

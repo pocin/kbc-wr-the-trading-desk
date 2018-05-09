@@ -14,7 +14,7 @@ Can create campaigns and adgroups
 set `dry_run` to `True` if you just want to test that your input tables will serialize without making any api calls.
 
 The writer behavior is driven by the input tables you provide.
-The TDD api accepts some deeply nested JSONs. However this component accepts data in `csv` format ([the KBC common interface](https://developers.keboola.com/extend/common-interface/folders/)).
+The TTD api accepts some deeply nested JSONs. However this component accepts data in `csv` format ([the KBC common interface](https://developers.keboola.com/extend/common-interface/folders/)).
 
 To create nested JSONs out of flat CSVs, the [jsontangle](https://github.com/pocin/jsontangle) library was developed and is used.
 Check out it's documentation for the details on the DSL grammar. It might be worthwhile to install it while developing transformations to verify that the fields are correct.
@@ -29,7 +29,7 @@ The writer currently supports these operations.
 In general, the writer behavior is as follows:
 1. load the input tables
 2. serialize csv -> json
-3. verify the serialization went ok and the final json has all the fields that the API requires + cast datatypes (as per the TDD documentation). This is by no means 100%, you can see the schema [here](./tdd/models.py)
+3. verify the serialization went ok and the final json has all the fields that the API requires + cast datatypes (as per the TTD documentation). This is by no means 100%, you can see the schema [here](./tdd/models.py)
 4. If all is good, acutally start making requests
 5. Log all requests into csv which are then uploaded back to kbc Storage
 

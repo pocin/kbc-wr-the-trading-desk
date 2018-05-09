@@ -7,7 +7,7 @@ import logging
 import sys
 from pathlib import Path
 import os
-from tdd.client import KBCTDDClient
+from tdd.client import KBCTTDClient
 import tdd.models
 from keboola.docker import Config
 
@@ -32,7 +32,7 @@ def _main(datadir):
         logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     path_csv_log = _datadir / 'out/tables/tdd_writer_log.csv'
 
-    client = KBCTDDClient(login=params['login'],
+    client = KBCTTDClient(login=params['login'],
                           password=params['#password'],
                           path_csv_log=path_csv_log)
 
@@ -63,7 +63,7 @@ def decide_action(intables):
                      FNAME_CAMPAIGNS)
         return create_campaigns
     else:
-        raise tdd.exceptions.TDDInternalError(
+        raise tdd.exceptions.TTDInternalError(
             "Don't know what action to perform. Found tables '%s'".format(
                 tables))
 

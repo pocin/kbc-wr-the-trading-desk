@@ -1,8 +1,8 @@
 class UserError(ValueError):
     """Raise whenever user makes a mistake (config) or malformed input data"""
 
-class TDDConfigError(UserError):
+class TTDConfigError(UserError):
     """Wrong config"""
 
-class TDDInternalError(Exception):
+class TTDInternalError(Exception):
     """Raise when I made a mistake"""
