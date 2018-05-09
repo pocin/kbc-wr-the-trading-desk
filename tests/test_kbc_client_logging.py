@@ -29,7 +29,7 @@ def test_logging_into_csv_and_stdout(tmpdir, caplog):
     csv and stream!"""
     log = tmpdir.join('sample_log.csv')
 
-    client = KBCTTDClient(login='foo', password='bar', path_csv_log=log.strpath)
+    client = KBCTTDClient(login='foo', password='bar', path_csv_log=log.strpath, base_url='https://apisb.thetradedesk.com/v3/')
 
     class Resp:
         pass

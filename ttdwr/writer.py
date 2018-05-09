@@ -10,6 +10,7 @@ import os
 from ttdwr.client import KBCTTDClient
 import ttdwr.models
 from keboola.docker import Config
+import voluptuous as vp
 
 logger = logging.getLogger(__name__)
 
@@ -20,10 +21,19 @@ def main():
     logger.info("Hello, world!")
 
 
+def validate_config(params):
+    schema = vp.Schema({
+        "login": str,
+        "#password": str,
+        vp.Optional("debug"): bool,
+        "action": vp.Any("sandbox", "production", "verify_inputs")
+    })
+    return schema(params)
+
 
 def _main(datadir):
     cfg = Config(datadir)
-    params = cfg.get_parameters()
+    params = validate_config(cfg.get_parameters())
     _datadir = Path(datadir)
     intables = _datadir / 'in/tables'
     if params.get('debug'):
@@ -38,16 +48,21 @@ def _main(datadir):
 
     db = prepare_data(intables)
     final_action = decide_action(intables)
-    if params.get('dry_run'):
-        logger.info("exitting, dry_run == True!")
+    action = params['action']
+    if action == 'verify_inputs':
+        logger.info("exitting, action == 'verify_inputs' ")
         return
+    elif action == 'sandbox':
+        client.base_url = 'https://apisb.thetradedesk.com/v3'
+    elif action == 'production':
+        client.base_url = 'https://api.thetradedesk.com/v3'
     with client:
         final_action(client, db)
 
 def decide_action(intables):
     tables = set(os.listdir(str(intables)))
     if FNAME_ADGROUPS in tables and FNAME_CAMPAIGNS in tables:
-        logger.info("Bound both '%s' and '%s'. "
+        logger.info("Found both '%s' and '%s'. "
                      "Will create campaigns and their adgroups afterwards",
                      FNAME_ADGROUPS,
                      FNAME_CAMPAIGNS)

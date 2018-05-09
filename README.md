@@ -6,12 +6,15 @@ Can create campaigns and adgroups
 ```javascript
 {
   "debug": true,
-  "dry_run": true,
+  "action": "sandbox",
   "login": "foo",
   "#password": "foo"
 }
 ```
-set `dry_run` to `True` if you just want to test that your input tables will serialize without making any api calls.
+set `"action": ` to
+- `"verify_inputs"` if you just want to test that your input tables will serialize without making any api calls.
+- `"sandbox"` if you want to test input tables serialization (`"verify_inputs"`) and making requests against the sandbox environment https://apisb.thetradedesk.com/v3/
+- `"production"` if you want to test input tables serialization (`"verify_inputs"`) and making requests against the production environment https://api.thetradedesk.com/v3/
 
 The writer behavior is driven by the input tables you provide.
 The TTD api accepts some deeply nested JSONs. However this component accepts data in `csv` format ([the KBC common interface](https://developers.keboola.com/extend/common-interface/folders/)).
