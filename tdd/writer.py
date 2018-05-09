@@ -116,11 +116,13 @@ def create_campaigns_and_adgroups(client, db):
     campaigns = tdd.models.query_campaigns(db)
     for campaign in campaigns:
         campaign_payload = json.loads(campaign['payload'])
-        campaign_id = campaign['campaign_id']
-        client.create_campaign(campaign_payload)
+        placeholder_campaign_id = campaign['campaign_id']
+        new_campaign = client.create_campaign(campaign_payload)
+        real_campaign_id = new_campaign['CampaignId']
         related_adgroups = tdd.models.query_adgroups(
             db,
-            campaign_id=campaign_id)
+            campaign_id=placeholder_campaign_id)
         for adgroup in related_adgroups:
             adgroup_payload = json.loads(adgroup['payload'])
-            adgroup_payload['CampaignId'] = campaign_id
+            adgroup_payload['CampaignId'] = real_campaign_id
+            client.create_adgroup(adgroup_payload)
