@@ -13,7 +13,7 @@ from io import StringIO
 import requests
 import pytest
 import logging
-from tdd.client import KBCTTDClient
+from ttdwr.client import KBCTTDClient
 
 
 def test_csv_quoting():
@@ -52,7 +52,7 @@ def test_logging_into_csv_and_stdout(tmpdir, caplog):
     # this is something in the root logger (which is not defined anywhere)
     # but the log is magically appearing there!
     assert 'client.py                  233 INFO     bodyyy\n' not in caplog.text
-    # since the tdd.client_cdc logger has propagate False it doesn't get captured
+    # since the ttdwr.client_cdc logger has propagate False it doesn't get captured
     # assert len(caplog.records) == 1
 
 def test_every__request_is_logged(tmpdir):

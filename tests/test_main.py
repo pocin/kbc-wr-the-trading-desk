@@ -1,6 +1,6 @@
 import pytest
 import logging
-from tdd.writer import main
+from ttdwr.writer import main
 
 def test_main_executes(caplog):
     with caplog.at_level(logging.INFO):

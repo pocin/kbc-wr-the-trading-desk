@@ -1,8 +1,8 @@
 import pytest
 
 from voluptuous import Schema, Coerce, Invalid
-import tdd.models
-from tdd.exceptions import TTDConfigError
+import ttdwr.models
+from ttdwr.exceptions import TTDConfigError
 
 def _prepare_incsv(tmpdir, csv_contents):
 
@@ -18,7 +18,7 @@ def test_parsing_csv_raises_on_missing_column(tmpdir):
 1,"Robin",42
 1,Ahoj,666""")
     with pytest.raises(TTDConfigError):
-        list(tdd.models.csv_to_json(csv_infile.strpath, id_column=['id']))
+        list(ttdwr.models.csv_to_json(csv_infile.strpath, id_column=['id']))
 
 def test_parsing_and_validating_csv_no_id_column(tmpdir):
     csv_infile = tmpdir.join('input.csv')
@@ -31,7 +31,7 @@ def test_parsing_and_validating_csv_no_id_column(tmpdir):
                      "Robin": Coerce(int),
                      "Ahoj": str})
 
-    validated_and_coerced = tdd.models.validate_input_csv(csv_infile,
+    validated_and_coerced = ttdwr.models.validate_input_csv(csv_infile,
                                                           schema,
                                                           id_column=['id'],
                                                           include_id_column=True)
@@ -44,7 +44,7 @@ def test_validating_csv_completely_fails_on_invalid_input():
     sch = Schema({"foo": str, "count": Coerce(int)})
 
     with pytest.raises(Invalid):
-        tdd.models.validate_json(obj, sch)
+        ttdwr.models.validate_json(obj, sch)
 
 
 def test_serialize_csv_to_json(tmpdir):
@@ -64,7 +64,7 @@ campA,budget__Cost,666
 campA,budget__Currency,USD'''
 
     csv_infile = _prepare_incsv(tmpdir, contents)
-    serialized = list(tdd.models.csv_to_json(
+    serialized = list(ttdwr.models.csv_to_json(
         csv_infile.strpath,
         id_column=['campaign_id'],
         include_id_column=True))
@@ -98,7 +98,7 @@ def test_converting_csv_row_format_to_column_format():
         }
     ]
 
-    converted_with_ids = list(tdd.models._column_to_row_format(
+    converted_with_ids = list(ttdwr.models._column_to_row_format(
         raw_csv_values,
         id_columns=['campaign_id', 'subcampaign_id']))
     assert converted_with_ids[0]  == expected[0]
@@ -114,7 +114,7 @@ def test_converting_csv_row_format_to_column_format():
     ]
 
 
-    converted_without_ids = list(tdd.models._column_to_row_format(
+    converted_without_ids = list(ttdwr.models._column_to_row_format(
         raw_csv_values,
         id_columns=None))
     assert converted_without_ids[0] == expected_without_ids[0]

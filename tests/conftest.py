@@ -1,26 +1,26 @@
 import pytest
-import tdd.models
+import ttdwr.models
 import logging
 
 
 @pytest.fixture
 def conn(tmpdir):
     db_path = tmpdir.join('tmp_master_database.sqlite3')
-    conn = tdd.models._init_database(db_path.strpath)
+    conn = ttdwr.models._init_database(db_path.strpath)
     return conn
 
 @pytest.fixture
 def conn_with_records(tmpdir):
     db_path = tmpdir.join('tmp_master_database.sqlite3')
-    conn = tdd.models._init_database(db_path.strpath)
+    conn = ttdwr.models._init_database(db_path.strpath)
 
     curr = conn.cursor()
     payload = {"foo": "bar", "baz": 42}
-    tdd.models.insert_campaign(curr, 'campA', payload)
-    tdd.models.insert_adgroup(curr, 'campA', 'adgrpA', payload)
-    tdd.models.insert_adgroup(curr, 'campA', 'adgrpB', payload)
-    tdd.models.insert_adgroup(curr, 'campA', 'adgrpC', payload)
-    tdd.models.insert_adgroup(curr, 'campB', 'adgrpX', payload)
+    ttdwr.models.insert_campaign(curr, 'campA', payload)
+    ttdwr.models.insert_adgroup(curr, 'campA', 'adgrpA', payload)
+    ttdwr.models.insert_adgroup(curr, 'campA', 'adgrpB', payload)
+    ttdwr.models.insert_adgroup(curr, 'campA', 'adgrpC', payload)
+    ttdwr.models.insert_adgroup(curr, 'campB', 'adgrpX', payload)
     conn.commit()
     return conn
 

@@ -37,7 +37,7 @@ import voluptuous as vp
 from collections import defaultdict
 import jsontangle
 import logging
-from tdd.exceptions import TTDConfigError
+from ttdwr.exceptions import TTDConfigError
 
 logger = logging.getLogger(__name__)
 

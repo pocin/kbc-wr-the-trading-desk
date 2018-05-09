@@ -7,8 +7,8 @@ import logging
 import sys
 from pathlib import Path
 import os
-from tdd.client import KBCTTDClient
-import tdd.models
+from ttdwr.client import KBCTTDClient
+import ttdwr.models
 from keboola.docker import Config
 
 logger = logging.getLogger(__name__)
@@ -63,7 +63,7 @@ def decide_action(intables):
                      FNAME_CAMPAIGNS)
         return create_campaigns
     else:
-        raise tdd.exceptions.TTDInternalError(
+        raise ttdwr.exceptions.TTDInternalError(
             "Don't know what action to perform. Found tables '%s'".format(
                 tables))
 
@@ -83,43 +83,43 @@ def prepare_data(intables, db_path='/tmp/tdd_writer_database.sqlite3'):
 
     """
     logger.info("Preparing input data")
-    db_conn = tdd.models._init_database(path=db_path)
+    db_conn = ttdwr.models._init_database(path=db_path)
 
     path_campaigns = intables / FNAME_CAMPAIGNS
     if path_campaigns.is_file():
         logger.info("Preparing campaign data %s", path_campaigns)
-        campaign_data = tdd.models._prepare_create_campaign_data(path_campaigns)
-        tdd.models._campaign_data_into_db(campaign_data, db_conn)
+        campaign_data = ttdwr.models._prepare_create_campaign_data(path_campaigns)
+        ttdwr.models._campaign_data_into_db(campaign_data, db_conn)
 
     path_adgroup = intables / FNAME_ADGROUPS
     if path_adgroup.is_file():
         logger.info("Preparing adgroup data %s", path_adgroup)
-        adgroup_data = tdd.models._prepare_create_adgroup_data(path_adgroup)
-        tdd.models._adgroup_data_into_db(adgroup_data, db_conn)
+        adgroup_data = ttdwr.models._prepare_create_adgroup_data(path_adgroup)
+        ttdwr.models._adgroup_data_into_db(adgroup_data, db_conn)
 
     return db_conn
 
 def create_adgroups(client, db):
-    adgroups = tdd.models.query_adgroups(db, campaign_id=None)
+    adgroups = ttdwr.models.query_adgroups(db, campaign_id=None)
     for adgrp in adgroups:
         payload = json.loads(adgrp['payload'])
         payload['CampaignId'] = adgrp['campaign_id']
         client.create_adgroup(payload)
 
 def create_campaigns(client, db):
-    campaigns = tdd.models.query_campaigns(db)
+    campaigns = ttdwr.models.query_campaigns(db)
     for campaign in campaigns:
         payload = json.loads(campaign['payload'])
         client.create_campaign(payload)
 
 def create_campaigns_and_adgroups(client, db):
-    campaigns = tdd.models.query_campaigns(db)
+    campaigns = ttdwr.models.query_campaigns(db)
     for campaign in campaigns:
         campaign_payload = json.loads(campaign['payload'])
         placeholder_campaign_id = campaign['campaign_id']
         new_campaign = client.create_campaign(campaign_payload)
         real_campaign_id = new_campaign['CampaignId']
-        related_adgroups = tdd.models.query_adgroups(
+        related_adgroups = ttdwr.models.query_adgroups(
             db,
             campaign_id=placeholder_campaign_id)
         for adgroup in related_adgroups:

@@ -12,7 +12,7 @@ from io import StringIO
 import requests
 import csv
 
-from tdd.exceptions import TTDConfigError
+from ttdwr.exceptions import TTDConfigError
 from ttdapi.client import TTDClient
 
 logger = logging.getLogger(__name__)

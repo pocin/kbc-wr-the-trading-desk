@@ -6,8 +6,8 @@ import json
 from pathlib import Path
 import pytest
 
-from tdd.models import _prepare_create_adgroup_data, _prepare_create_campaign_data
-import tdd.writer
+from ttdwr.models import _prepare_create_adgroup_data, _prepare_create_campaign_data
+import ttdwr.writer
 
 
 def test_validating_creating_adgroup(valid_adgroup_csv, conn):
@@ -79,7 +79,7 @@ def test_validating_creating_adgroup(valid_adgroup_csv, conn):
     assert (adgroups[1] == expected[0]) or (adgroups[1] == expected[1])
 
 
-    tdd.models._adgroup_data_into_db(adgroups, conn)
+    ttdwr.models._adgroup_data_into_db(adgroups, conn)
     curr = conn.cursor()
     for adgrp in curr.execute("SELECT * FROM adgroups;"):
         if adgrp['adgroup_id'] == 'tempA':
@@ -123,7 +123,7 @@ def test_creating_campaign_validation(valid_campaign_csv):
 def test_func_loading_adgroup_data(valid_adgroup_csv, tmpdir):
     datadir = Path(valid_adgroup_csv).parent
 
-    db = tdd.writer.prepare_data(datadir, db_path=tmpdir.join('db.sqlite3').strpath)
+    db = ttdwr.writer.prepare_data(datadir, db_path=tmpdir.join('db.sqlite3').strpath)
 
     # at this point I expect a database to have serialized adgroup data
     # but empty campaigns
@@ -139,7 +139,7 @@ def test_func_loading_adgroup_data(valid_adgroup_csv, tmpdir):
 def test_func_loading_campaign_data(valid_campaign_csv, tmpdir):
     datadir = Path(valid_campaign_csv).parent
 
-    db = tdd.writer.prepare_data(datadir, db_path=tmpdir.join('db.sqlite3').strpath)
+    db = ttdwr.writer.prepare_data(datadir, db_path=tmpdir.join('db.sqlite3').strpath)
 
     # at this point I expect a database to have serialized adgroup data
     # but empty campaigns
@@ -157,7 +157,7 @@ def test_func_loading_campaign_and_adgroup_data(valid_campaign_csv,
 
     datadir = Path(valid_campaign_csv).parent
 
-    db = tdd.writer.prepare_data(datadir, db_path=tmpdir.join('db.sqlite3').strpath)
+    db = ttdwr.writer.prepare_data(datadir, db_path=tmpdir.join('db.sqlite3').strpath)
 
     with db:
         campaigns = db.execute("SELECT * FROM campaigns").fetchall()

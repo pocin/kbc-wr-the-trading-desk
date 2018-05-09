@@ -34,7 +34,7 @@ In general, the writer behavior is as follows:
 5. Log all requests into csv which are then uploaded back to kbc Storage
 
 ## Create adgroups
-check `tdd.models.CreateAdGroupSchema` for the schema which is being checked.
+check `ttdwr.models.CreateAdGroupSchema` for the schema which is being checked.
 
 This is a csv template `/data/in/tables/create_adgroups.csv`
 
@@ -122,9 +122,9 @@ $ git clone https://github.com/pocin/kbc-wr-the-trading-desk && cd kbc-wr-the-tr
 $ cp /your/path/to/create_campaigns.csv ./data
 $ docker-compose run --rm dev
 /code # python3
->>> import tdd.models
+>>> import ttdwr.models
 >>> path_campaigns = './data/create_campaigns.csv'
->>> serialized = tdd.models._prepare_create_campaign_data(path_campaign)
+>>> serialized = ttdwr.models._prepare_create_campaign_data(path_campaign)
 >>> for adgroup in serialized:
 ...     print(adgroup)
 
@@ -132,7 +132,7 @@ $ docker-compose run --rm dev
 
 ## Create Campaigns
 
-check `tdd.models.CreateCampaignSchema` for the schema which is being checked.
+check `ttdwr.models.CreateCampaignSchema` for the schema which is being checked.
 
 This csv template `/data/in/tables/create_campaigns.csv`
 ```

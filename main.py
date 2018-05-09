@@ -1,4 +1,4 @@
-from tdd.writer import main
+from ttdwr.writer import main
 import sys
 import requests
 import logging
