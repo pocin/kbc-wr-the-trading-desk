@@ -231,7 +231,7 @@ class KBCTDDClient(TDDClient):
                                  'http_status': resp.status_code,
                                  'pk': self._make_pk_from_response(resp),
                                  'url': resp.url,
-                                 'request_body': resp.request.body or ''
+                                 'request_body': self._csv_quote(resp.request.body.decode('utf8')) or ''
                              })
 
     @staticmethod
