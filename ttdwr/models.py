@@ -143,6 +143,9 @@ def _CampaignReportingColumns(jsonstr):
         required=True)
     return schema(json.loads(jsonstr))
 
+UpdateCampaignSchema = vp.Schema({"CampaignId": str}, extra=True, required=True)
+
+
 # "description": "2018-04-10T11:37:46.4780952+00:00",
 CreateCampaignSchema = vp.Schema(
     {
@@ -158,6 +161,8 @@ CreateCampaignSchema = vp.Schema(
     },
     extra=True,
     required=True)
+
+UpdateAdGroupSchema = vp.Schema({"CampaignId": str, "AdGroupId": str}, extra=True, required=True)
 
 CreateAdGroupSchema = vp.Schema(
     {
@@ -204,10 +209,24 @@ def _prepare_create_adgroup_data(path_csv):
     yield from validate_input_csv(
             path_csv,
             schema=CreateAdGroupSchema,
-            id_column=['CampaignId', 'AdgroupId'],
+            id_column=['CampaignId', 'AdGroupId'],
             include_id_column=True)
 
 
+def _prepare_update_adgroup_data(path_csv):
+    """ parse input adgroups csv and return cleaned rows
+
+    we can be sure all data is ok only after the whole generator is consumed!!!
+
+    the returned generator yields dict which can be sent to the api:
+        {'CampaignId': 42, "RTBAttributes": {"BudgetSettings": ...}, }
+    """
+    # we can be sure all data is ok only after the whole generator is consumed!!!
+    yield from validate_input_csv(
+            path_csv,
+            schema=UpdateAdGroupSchema,
+            id_column=['CampaignId', 'AdGroupId'],
+            include_id_column=True)
 
 
 def _prepare_create_campaign_data(path_csv):
@@ -221,6 +240,17 @@ def _prepare_create_campaign_data(path_csv):
         id_column=["CampaignId"],
         include_id_column=True)
 
+
+def _prepare_update_campaign_data(path_csv):
+    """ parse input campaign csv and return cleaned rows
+
+    we can be sure all data is ok only after the whole generator is consumed!!!
+    """
+    yield from validate_input_csv(
+        path_csv,
+        schema=UpdateCampaignSchema,
+        id_column=["CampaignId"],
+        include_id_column=True)
 
 
 def _init_database(path='/tmp/tddwriter_data.sqlite3', overwrite=True):
@@ -298,7 +328,7 @@ def _adgroup_data_into_db(adgroup_data, conn):
     cursor = conn.cursor()
     for row in adgroup_data:
         cid = row.pop('CampaignId')
-        adid = row.pop('AdgroupId')
+        adid = row.pop('AdGroupId')
         insert_adgroup(cursor,
                        campaign_id=cid,
                        adgroup_id=adid,

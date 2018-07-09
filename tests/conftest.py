@@ -28,7 +28,7 @@ def conn_with_records(tmpdir):
 @pytest.fixture
 def valid_adgroup_csv(tmpdir):
 
-    incsv_contents = """CampaignId,AdgroupId,path,value
+    incsv_contents = """CampaignId,AdGroupId,path,value
 temporary,tempA,AdGroupName,"Test adgroup"
 temporary,tempA,Description,"Test adgroup desc"
 temporary,tempA,IsEnabled,True
@@ -102,6 +102,29 @@ temporary,CampaignConversionReportingColumns___0,"{""TrackingTagId"": 1, ""Repor
 temporary,CampaignConversionReportingColumns___1,"{""TrackingTagId"": 1, ""ReportingColumnId"": 11}"
 '''
     incsv = tmpdir.join('create_campaigns.csv')
+    incsv.write(incsv_contents)
+
+    return incsv.strpath
+
+
+@pytest.fixture
+def valid_update_adgroup_csv(tmpdir):
+
+    incsv_contents = """CampaignId,AdGroupId,path,value
+temporary,tempA,AdGroupName,"Test adgroup"
+temporary,tempB,RTBAttributes__BudgetSettings__Budget__CurrencyCode,USD"""
+    incsv = tmpdir.join('update_adgroups.csv')
+    incsv.write(incsv_contents)
+
+    return incsv.strpath
+
+
+
+@pytest.fixture
+def valid_update_campaign_csv(tmpdir):
+    incsv_contents = '''CampaignId,path,value
+temporary,Description,TEST'''
+    incsv = tmpdir.join('update_campaigns.csv')
     incsv.write(incsv_contents)
 
     return incsv.strpath

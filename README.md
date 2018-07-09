@@ -1,4 +1,4 @@
-# The trading desk writer (STILL UNDER HEAVY DEV)
+# The trade desk writer (STILL UNDER HEAVY DEV)
 
 Can create campaigns and adgroups
 
@@ -42,7 +42,7 @@ check `ttdwr.models.CreateAdGroupSchema` for the schema which is being checked.
 This is a csv template `/data/in/tables/create_adgroups.csv`
 
 ```
-CampaignId,AdgroupId,path,value
+CampaignId,AdGroupId,path,value
 42,whateverA,AdGroupName,"Test adgroup"
 42,whateverA,Description,"Test adgroup desc"
 42,whateverA,IsEnabled,True
@@ -75,7 +75,7 @@ which will be internally compiled into
 ```
 {
         "CampaignId": "42",
-        "AdgroupId": "whateverA", #this is just a temporary placeholder and is not sent to the API!
+        "AdGroupId": "whateverA", #this is just a temporary placeholder and is not sent to the API!
         "AdGroupName": "Test adgroup",
         "Description": "Test adgroup desc",
         "IsEnabled": True,
@@ -104,11 +104,11 @@ which will be internally compiled into
 ```
 
 
-the column `AdgroupId` is an arbitrary unique string grouping all rows for given `CampaignId-Adgroup` combination.  
+the column `AdGroupId` is an arbitrary unique string grouping all rows for given `CampaignId-AdGroup` combination.  
 e.g.: One campaign (id 42) can have multiple adgroups (`whateverA` and `whateverB`)
 
 ```
-CampaignId,AdgroupId,path,value
+CampaignId,AdGroupId,path,value
 42,whateverA,AdGroupName,"first adgroup for campaign 42"
 ...
 42,whateverA,RTBAttributes__AutoOptimizationSettings__IsAudienceAutoOptimizationEnabled,True
@@ -185,8 +185,28 @@ This happens when both `/data/in/tables/create_campaigns.csv` and `/data/in/tabl
 This is the detailed workflow:
 
 1. Take a campaign (all rows with the same `CampaignId`) from `create_campaigns.csv`. At this point the `CampaignId` doesn't exist and is just a dummy placeholder value (must be unique within the dataset, though)
-2. All adgroups (zero or more (more adgroups for one campaign are distinguished by the `AdgroupId` column)) with the same `CampaignId` from table `create_adgroups.csv` are fetched.
+2. All adgroups (zero or more (more adgroups for one campaign are distinguished by the `AdGroupId` column)) with the same `CampaignId` from table `create_adgroups.csv` are fetched.
 3. Make an API request to create the Campaign. Use the returned `CampaignId` instead of the dummy one when making the requests to create the adgroups.
+
+
+## Update campaigns
+`/data/in/tables/update_campaigns.csv`
+
+```csv
+CampaignId,path,value
+existing_id,Description,"Foobar"
+```
+
+
+## Update Adgroups
+`/data/in/tables/update_adgroups.csv`
+
+```csv
+AdGroupIdpath,value
+existing_adgroup_id,Description,"Foobar"
+```
+
+
 
 # Development
 ## Run locally
@@ -202,3 +222,11 @@ make test
 # after dev session is finished to clean up containers..
 make clean 
 ```
+
+
+# Changelog
+
+| version | changes                                              |
+|---------|------------------------------------------------------|
+|   0.0.3 | uses jsontangle to convert flattened csvs into jsons |
+|         |                                                      |

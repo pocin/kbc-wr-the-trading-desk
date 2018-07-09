@@ -19,7 +19,7 @@ def test_validating_creating_adgroup(valid_adgroup_csv, conn):
     }
     expected = [{
         "CampaignId": "temporary",
-        "AdgroupId": "tempA",
+        "AdGroupId": "tempA",
         "AdGroupName": "Test adgroup",
         "Description": "Test adgroup desc",
         "IsEnabled": True,
@@ -46,7 +46,7 @@ def test_validating_creating_adgroup(valid_adgroup_csv, conn):
         }
     }, {
         "CampaignId": "temporary",
-        "AdgroupId": "tempB",
+        "AdGroupId": "tempB",
         "AdGroupName": "Test adgroup2",
         "Description": "Test adgroup desc",
         "IsEnabled": True,
@@ -167,3 +167,27 @@ def test_func_loading_campaign_and_adgroup_data(valid_campaign_csv,
         assert len(adgroups) == 2
         assert adgroups[0]['campaign_id'] == 'temporary'
         assert adgroups[0]['adgroup_id'] in ('tempA','tempB')
+
+def test_func_loading_updating_adgroups_data_ok(valid_update_adgroup_csv, tmpdir):
+    datadir = Path(valid_update_adgroup_csv).parent
+
+    db = ttdwr.writer.prepare_data(datadir, db_path=tmpdir.join('db.sqlite3').strpath)
+
+    with db:
+        adgroups = list(db.execute("SELECT * FROM adgroups").fetchall())
+        assert len(adgroups) == 2
+        assert adgroups[0]['campaign_id'] == 'temporary'
+        assert adgroups[0]['adgroup_id'] in ('tempA','tempB')
+        assert json.loads(adgroups[0]['payload']) == {"AdGroupName": "Test adgroup"}
+        assert json.loads(adgroups[1]['payload']) == {"RTBAttributes": {"BudgetSettings": {"Budget": {"CurrencyCode":"USD"}}}}
+
+def test_func_loading_updating_campaign_data_ok(valid_update_campaign_csv, tmpdir):
+    datadir = Path(valid_update_campaign_csv).parent
+
+    db = ttdwr.writer.prepare_data(datadir, db_path=tmpdir.join('db.sqlite3').strpath)
+
+    with db:
+        adgroups = list(db.execute("SELECT * FROM campaigns").fetchall())
+        assert len(adgroups) == 1
+        assert adgroups[0]['campaign_id'] == 'temporary'
+        assert json.loads(adgroups[0]['payload']) == {"Description": "TEST"}

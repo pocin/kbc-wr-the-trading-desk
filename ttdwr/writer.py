@@ -16,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 FNAME_ADGROUPS = 'create_adgroups.csv'
 FNAME_CAMPAIGNS = 'create_campaigns.csv'
+FNAME_UPDATE_ADGROUPS = 'update_adgroups.csv'
+FNAME_UPDATE_CAMPAIGNS = 'update_campaigns.csv'
 
 def main():
     logger.info("Hello, world!")
@@ -102,16 +104,35 @@ def prepare_data(intables, db_path='/tmp/tdd_writer_database.sqlite3'):
 
     path_campaigns = intables / FNAME_CAMPAIGNS
     if path_campaigns.is_file():
-        logger.info("Preparing campaign data %s", path_campaigns)
+        logger.info("Preparing creation of campaign data %s", path_campaigns)
         campaign_data = ttdwr.models._prepare_create_campaign_data(path_campaigns)
         ttdwr.models._campaign_data_into_db(campaign_data, db_conn)
 
     path_adgroup = intables / FNAME_ADGROUPS
     if path_adgroup.is_file():
-        logger.info("Preparing adgroup data %s", path_adgroup)
+        logger.info("Preparing creation of adgroup data %s", path_adgroup)
         adgroup_data = ttdwr.models._prepare_create_adgroup_data(path_adgroup)
         ttdwr.models._adgroup_data_into_db(adgroup_data, db_conn)
 
+    path_update_campaigns = intables/ FNAME_UPDATE_CAMPAIGNS
+    if path_update_campaigns.is_file():
+        if path_campaigns.is_file():
+            raise ttdwr.exceptions.TTDConfigError(
+                "Cant create and update campaigns within same writer config."
+                " Split it into two!")
+        logger.info("Preparing data for updating campaigns %s", path_update_campaigns)
+        update_campaign_data = ttdwr.models._prepare_update_campaign_data(path_update_campaigns)
+        ttdwr.models._campaign_data_into_db(update_campaign_data, db_conn)
+
+    path_update_adgroups = intables/ FNAME_UPDATE_ADGROUPS
+    if path_update_adgroups.is_file():
+        if path_adgroup.is_file():
+            raise ttdwr.exceptions.TTDConfigError(
+                "Cant create and update adgroups within same writer config. "
+                "Split it into two!")
+        logger.info("Preparing data for updating adgroups %s", path_update_adgroups)
+        update_campaign_data = ttdwr.models._prepare_update_adgroup_data(path_update_adgroups)
+        ttdwr.models._adgroup_data_into_db(update_campaign_data, db_conn)
     return db_conn
 
 def create_adgroups(client, db):
