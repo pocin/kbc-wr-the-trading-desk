@@ -18,8 +18,6 @@ The writer currently supports these operations.
 - Creating campaigns
 - Creating adgroups
 - Creating campaign immediately followed by creating adgroup for the new id
-- TODO: Updating existing campaign
-- TODO: Updating existing adgroup
 
 The writer logs all requests to csv and stdout/stderr to enable CDC
 
@@ -40,12 +38,14 @@ with open("data.csv", 'w') as f:
         wr.writerow({"payload": json.dumps(row)})
 ```
 
-which would end up in this
-```
+which would end up looking like this
+```bash
+$ cat data.csv
 payload
 "{""CampaignId"": ""1234""}"
 "{""CampaignId"": ""56678""}"
 ```
+
 ## Create adgroups
 make a csv `/data/in/tables/create_adgroups.csv` which contains one column `"payload"`. The payload values correspond 1:1 to these https://apisb.thetradedesk.com/v3/doc/api/post-adgroup
 
@@ -57,13 +57,13 @@ make a csv `/data/in/tables/create_campaigns.csv` containing the standard `"payl
 This happens when tables
 - `/data/in/tables/create_campaigns.csv` with columns `CampaignId,payload`
 - `/data/in/tables/create_adgroups.csv` with columns `CampaignId,payload`
-tables are present.
+are present.
 
-This is the detailed workflow:
+This is what happens under the hood:
 
-1. Take a campaign (all rows with the same `CampaignId`) from `create_campaigns.csv`. At this point the `CampaignId` doesn't exist and is just a dummy placeholder value (must be unique within the dataset, though)
-2. All adgroups (zero or more (more adgroups for one campaign are distinguished by the `AdGroupId` column)) with the same `CampaignId` from table `create_adgroups.csv` are fetched.
-3. Make an API request to create the Campaign within TTD. Use the returned `CampaignId` instead of the dummy `CampaignId` when making the requests to create the adgroups. 
+1. Take a campaign from `create_campaigns.csv`. At this point the `CampaignId` is just a dummy placeholder value (must be unique within the dataset, though)
+2. All adgroups with the same `CampaignId` from table `create_adgroups.csv` are fetched.
+3. API request to create the Campaign within TTD is made. The returned `CampaignId` is used instead of the dummy `CampaignId` when making the requests to create the adgroups.
 
 
 
