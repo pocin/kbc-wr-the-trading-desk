@@ -3,13 +3,15 @@ KBC Related stuff
 
 """
 import json
+from functools import partial
 import logging
 import sys
+import csv
 from pathlib import Path
 import os
 from ttdwr.client import KBCTTDClient
-import ttdwr.models
 from keboola.docker import Config
+import itertools
 import voluptuous as vp
 
 logger = logging.getLogger(__name__)
@@ -28,7 +30,7 @@ def validate_config(params):
         "login": str,
         "#password": str,
         vp.Optional("debug"): bool,
-        "action": vp.Any("sandbox", "production", "verify_inputs")
+        "base_url": str,
     })
     return schema(params)
 
@@ -48,18 +50,9 @@ def _main(datadir):
                           password=params['#password'],
                           path_csv_log=path_csv_log)
 
-    db = prepare_data(intables)
     final_action = decide_action(intables)
-    action = params['action']
-    if action == 'verify_inputs':
-        logger.info("exitting, action == 'verify_inputs' ")
-        return
-    elif action == 'sandbox':
-        client.base_url = 'https://apisb.thetradedesk.com/v3'
-    elif action == 'production':
-        client.base_url = 'https://api.thetradedesk.com/v3'
     with client:
-        final_action(client, db)
+        final_action(client=client)
 
 def decide_action(intables):
     tables = set(os.listdir(str(intables)))
@@ -68,17 +61,20 @@ def decide_action(intables):
                      "Will create campaigns and their adgroups afterwards",
                      FNAME_ADGROUPS,
                      FNAME_CAMPAIGNS)
-        return create_campaigns_and_adgroups
+        return partial(
+            create_campaigns_and_adgroups,
+            path_csv_campaigns=FNAME_CAMPAIGNS,
+            path_csv_adgroups=FNAME_ADGROUPS)
 
     elif FNAME_ADGROUPS in tables:
         logger.info("Found only '%s' Will create only adgroups",
                      FNAME_ADGROUPS)
-        return create_adgroups
+        return partial(create_adgroups, path_to_csv=FNAME_ADGROUPS)
 
     elif FNAME_CAMPAIGNS in tables:
         logger.info("Found only '%s' Will create only campaigns",
                      FNAME_CAMPAIGNS)
-        return create_campaigns
+        return partial(create_campaigns, path_to_csv=FNAME_CAMPAIGNS)
     else:
         raise ttdwr.exceptions.TTDInternalError(
             "Don't know what action to perform. Found tables '%s'".format(
@@ -86,78 +82,48 @@ def decide_action(intables):
 
 
 
-def prepare_data(intables, db_path='/tmp/tdd_writer_database.sqlite3'):
-    """
-    Load csvs
-    Serialize to json
-    Validate
-    Prepare database
-    Load into db
+def load_csv_data(path_to_csv):
+    with open(path_to_csv) as f:
+        rdr = csv.DictReader(f)
+        yield from rdr
 
-    return connection to database
-
-    once this function is finished we can be certain that the data is correct (to the extent covered by the defined schemas)
-
-    """
-    logger.info("Preparing input data")
-    db_conn = ttdwr.models._init_database(path=db_path)
-
-    path_campaigns = intables / FNAME_CAMPAIGNS
-    if path_campaigns.is_file():
-        logger.info("Preparing creation of campaign data %s", path_campaigns)
-        campaign_data = ttdwr.models._prepare_create_campaign_data(path_campaigns)
-        ttdwr.models._campaign_data_into_db(campaign_data, db_conn)
-
-    path_adgroup = intables / FNAME_ADGROUPS
-    if path_adgroup.is_file():
-        logger.info("Preparing creation of adgroup data %s", path_adgroup)
-        adgroup_data = ttdwr.models._prepare_create_adgroup_data(path_adgroup)
-        ttdwr.models._adgroup_data_into_db(adgroup_data, db_conn)
-
-    path_update_campaigns = intables/ FNAME_UPDATE_CAMPAIGNS
-    if path_update_campaigns.is_file():
-        if path_campaigns.is_file():
-            raise ttdwr.exceptions.TTDConfigError(
-                "Cant create and update campaigns within same writer config."
-                " Split it into two!")
-        logger.info("Preparing data for updating campaigns %s", path_update_campaigns)
-        update_campaign_data = ttdwr.models._prepare_update_campaign_data(path_update_campaigns)
-        ttdwr.models._campaign_data_into_db(update_campaign_data, db_conn)
-
-    path_update_adgroups = intables/ FNAME_UPDATE_ADGROUPS
-    if path_update_adgroups.is_file():
-        if path_adgroup.is_file():
-            raise ttdwr.exceptions.TTDConfigError(
-                "Cant create and update adgroups within same writer config. "
-                "Split it into two!")
-        logger.info("Preparing data for updating adgroups %s", path_update_adgroups)
-        update_campaign_data = ttdwr.models._prepare_update_adgroup_data(path_update_adgroups)
-        ttdwr.models._adgroup_data_into_db(update_campaign_data, db_conn)
-    return db_conn
-
-def create_adgroups(client, db):
-    adgroups = ttdwr.models.query_adgroups(db, campaign_id=None)
-    for adgrp in adgroups:
+def create_adgroups(client, path_to_csv):
+    for adgrp in load_csv_data(path_to_csv):
         payload = json.loads(adgrp['payload'])
-        payload['CampaignId'] = adgrp['campaign_id']
         client.create_adgroup(payload)
 
-def create_campaigns(client, db):
-    campaigns = ttdwr.models.query_campaigns(db)
-    for campaign in campaigns:
+def create_campaigns(client, path_to_csv):
+    for campaign in load_csv_data(path_to_csv):
         payload = json.loads(campaign['payload'])
         client.create_campaign(payload)
 
-def create_campaigns_and_adgroups(client, db):
-    campaigns = ttdwr.models.query_campaigns(db)
+def group_adgroups_to_campaigns(iterable_of_adgroups):
+    """convert an iterable of {"campaign_id": .., "payload": ...} into
+    {"<capaign_id": [list of payloads]}
+
+    """
+    grouped = itertools.groupby(
+        sorted(iterable_of_adgroups,
+               key=lambda grp: grp["CampaignId"]),
+        lambda grp: grp["CampaignId"])
+    mapping = {}
+    for key, values in grouped:
+        mapping[key] = [value["payload"]
+                        for value
+                        in values]
+    return mapping
+
+
+def create_campaigns_and_adgroups(client, path_csv_campaigns, path_csv_adgroups):
+    campaigns = load_csv_data(path_csv_campaigns)
+    # for now load into memory, there shouldn't be too many of them
+    adgroups = group_adgroups_to_campaigns(load_csv_data(path_csv_adgroups))
     for campaign in campaigns:
         campaign_payload = json.loads(campaign['payload'])
-        placeholder_campaign_id = campaign['campaign_id']
+        placeholder_campaign_id = campaign['CampaignId']
         new_campaign = client.create_campaign(campaign_payload)
         real_campaign_id = new_campaign['CampaignId']
-        related_adgroups = ttdwr.models.query_adgroups(
-            db,
-            campaign_id=placeholder_campaign_id)
+        related_adgroups = adgroups[placeholder_campaign_id]
         for adgroup in related_adgroups:
             adgroup_payload = json.loads(adgroup['payload'])
             adgroup_payload['CampaignId'] = real_campaign_id

@@ -1,7 +1,6 @@
 """
-The client should be able to perform generic interactions with the API
+A wrapper around base client that logs every request to csv & stdout/err
 
-communicate
 """
 import logging
 from urllib.parse import urljoin
