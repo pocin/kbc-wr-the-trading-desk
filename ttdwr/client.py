@@ -43,10 +43,10 @@ class KBCTTDClient(TTDClient):
         cdc_logger = logging.getLogger(__name__ + '_cdc')
         cdc_logger.propagate = False
         # all requests are logged in csv
-        self.csv_log_header = ["type","timestamp", "pk", "http_status", "url",
+        self.csv_log_header = ["type","timestamp", "pk", "http_status", "method", "url",
                                "request", "response"]
         csv_formatter = logging.Formatter('%(name)s,%(asctime)s,%(pk)s,%(http_status)s,'
-                                          '%(url)s,%(request_body)s,%(message)s',
+                                          '%(method)s,%(url)s,%(request_body)s,%(message)s',
                                           datefmt='%Y-%m-%dT%H:%M:%S')
 
         csv_handler = logging.FileHandler(log_path, 'w')
