@@ -13,6 +13,7 @@ import csv
 
 from ttdwr.exceptions import TTDConfigError
 from ttdapi.client import TTDClient
+from ttdapi.exceptions import TTDClientError
 
 logger = logging.getLogger(__name__)
 
@@ -71,12 +72,17 @@ class KBCTTDClient(TTDClient):
         """csv-escape given text and write to the csv log
 
         """
+        try:
+            req_body = resp.request.body.decode('utf8')
+        except AttributeError:
+            req_body = ''
         self.cdc_logger.info(self._csv_quote(resp.text),
                              extra={
                                  'http_status': resp.status_code,
                                  'pk': self._make_pk_from_response(resp),
+                                 'method': resp.request.method,
                                  'url': resp.url,
-                                 'request_body': self._csv_quote(resp.request.body.decode('utf8')) or ''
+                                 'request_body': self._csv_quote(req_body)
                              })
 
     @staticmethod
@@ -86,7 +92,7 @@ class KBCTTDClient(TTDClient):
     def _request(self, method, url, *args, **kwargs):
         try:
             resp = super()._request(method, url, *args, **kwargs)
-        except requests.HTTPError as err:
+        except (requests.HTTPError, TTDClientError)  as err:
             # I think this will ultimately double log the errors, but
             # it quite makes sense. As the root logger doesn't know about
             # cdc logger at all

@@ -80,8 +80,6 @@ def decide_action(intables):
             "Don't know what action to perform. Found tables '%s'".format(
                 tables))
 
-
-
 def load_csv_data(path_to_csv):
     with open(path_to_csv) as f:
         rdr = csv.DictReader(f)
