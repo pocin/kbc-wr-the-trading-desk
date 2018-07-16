@@ -38,6 +38,7 @@ def test_logging_into_csv_and_stdout(tmpdir, caplog):
     resp.status_code = 200
     resp.request = Resp()
     resp.request.body = b'bodyyy'
+    resp.request.method = b'methodyy'
     resp.text = 'bodyyy'
     client.log_response(resp)
 

@@ -10,7 +10,6 @@ import csv
 from pathlib import Path
 import os
 from ttdwr.client import KBCTTDClient
-from keboola.docker import Config
 import itertools
 import voluptuous as vp
 
@@ -21,8 +20,23 @@ FNAME_CAMPAIGNS = 'create_campaigns.csv'
 FNAME_UPDATE_ADGROUPS = 'update_adgroups.csv'
 FNAME_UPDATE_CAMPAIGNS = 'update_campaigns.csv'
 
-def main():
-    logger.info("Hello, world!")
+def main(params, datadir):
+    _datadir = Path(datadir)
+    intables = _datadir / 'in/tables'
+    if params.get('debug'):
+        logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
+    else:
+        logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    path_csv_log = _datadir / 'out/tables/tdd_writer_log.csv'
+
+    client = KBCTTDClient(login=params['login'],
+                          password=params['#password'],
+                          base_url=params.get("base_url", "https://api.thetradedesk.com/v3/"),
+                          path_csv_log=path_csv_log)
+
+    final_action = decide_action(intables)
+    with client:
+        final_action(client=client)
 
 
 def validate_config(params):
@@ -34,25 +48,6 @@ def validate_config(params):
     })
     return schema(params)
 
-
-def _main(datadir):
-    cfg = Config(datadir)
-    params = validate_config(cfg.get_parameters())
-    _datadir = Path(datadir)
-    intables = _datadir / 'in/tables'
-    if params.get('debug'):
-        logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
-    else:
-        logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-    path_csv_log = _datadir / 'out/tables/tdd_writer_log.csv'
-
-    client = KBCTTDClient(login=params['login'],
-                          password=params['#password'],
-                          path_csv_log=path_csv_log)
-
-    final_action = decide_action(intables)
-    with client:
-        final_action(client=client)
 
 def decide_action(intables):
     tables = set(os.listdir(str(intables)))

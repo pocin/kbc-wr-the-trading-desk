@@ -7,9 +7,12 @@ Can create campaigns and adgroups
 {
   "debug": true,
   "login": "foo",
-  "#password": "foo"
+  "#password": "foo",
+  "base_url": "https://api.thetradedesk.com/v3/"
 }
 ```
+
+`base_url` is optional (default to `https://api.thetradedesk.com/v3/`)
 
 The writer behavior is driven by the input tables you provide.
 The TTD api accepts some deeply nested JSONs. However this component accepts data in `csv` format ([the KBC common interface](https://developers.keboola.com/extend/common-interface/folders/)).
