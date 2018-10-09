@@ -2,16 +2,19 @@
 KBC Related stuff
 
 """
-import json
-from functools import partial
-import logging
-import sys
 import csv
-from pathlib import Path
-import os
-from ttdwr.client import KBCTTDClient
 import itertools
+import json
+import logging
+import os
+import sys
+from functools import partial
+from pathlib import Path
+
 import voluptuous as vp
+
+import ttdwr
+from ttdwr.client import KBCTTDClient
 
 logger = logging.getLogger(__name__)
 
@@ -53,9 +56,9 @@ def decide_action(intables):
     tables = set(os.listdir(str(intables)))
     if FNAME_ADGROUPS in tables and FNAME_CAMPAIGNS in tables:
         logger.info("Found both '%s' and '%s'. "
-                     "Will create campaigns and their adgroups afterwards",
-                     FNAME_ADGROUPS,
-                     FNAME_CAMPAIGNS)
+                    "Will create campaigns and their adgroups afterwards",
+                    FNAME_ADGROUPS,
+                    FNAME_CAMPAIGNS)
         return partial(
             create_campaigns_and_adgroups,
             path_csv_campaigns=FNAME_CAMPAIGNS,
@@ -63,16 +66,16 @@ def decide_action(intables):
 
     elif FNAME_ADGROUPS in tables:
         logger.info("Found only '%s' Will create only adgroups",
-                     FNAME_ADGROUPS)
+                    FNAME_ADGROUPS)
         return partial(create_adgroups, path_to_csv=FNAME_ADGROUPS)
 
     elif FNAME_CAMPAIGNS in tables:
         logger.info("Found only '%s' Will create only campaigns",
-                     FNAME_CAMPAIGNS)
+                    FNAME_CAMPAIGNS)
         return partial(create_campaigns, path_to_csv=FNAME_CAMPAIGNS)
     else:
         raise ttdwr.exceptions.TTDInternalError(
-            "Don't know what action to perform. Found tables '%s'".format(
+            "Don't know what action to perform. Found tables '{}'".format(
                 tables))
 
 def load_csv_data(path_to_csv):
