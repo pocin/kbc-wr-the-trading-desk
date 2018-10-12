@@ -29,19 +29,19 @@ def test_deciding_actions_adgroups_and_campaigns(tmpdir):
 def test_grouping_related_adgroups():
     raw_data = [
         {
-            "CampaignId": 1,
+            "dummy_campaign_id": 1,
             "payload": {"foobar": 1}
         },
         {
-            "CampaignId": 2,
+            "dummy_campaign_id": 2,
             "payload": {"foobar": 3}
         },
         {
-            "CampaignId": 1,
+            "dummy_campaign_id": 1,
             "payload": {"foobar": 2}
         },
         {
-            "CampaignId": 2,
+            "dummy_campaign_id": 2,
             "payload": {"foobar": 4}
         }
     ]

@@ -14,7 +14,7 @@ from pathlib import Path
 import voluptuous as vp
 
 import ttdwr
-from ttdwr.client import KBCTTDClient
+from ttdapi.client import TTDClient
 
 logger = logging.getLogger(__name__)
 
@@ -30,12 +30,11 @@ def main(params, datadir):
         logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
     else:
         logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-    path_csv_log = _datadir / 'out/tables/tdd_writer_log.csv'
 
-    client = KBCTTDClient(login=params['login'],
-                          password=params['#password'],
-                          base_url=params.get("base_url", "https://api.thetradedesk.com/v3/"),
-                          path_csv_log=path_csv_log)
+    client = TTDClient(login=params['login'],
+                        password=params['#password'],
+                        base_url=params.get("base_url", "https://api.thetradedesk.com/v3/")
+    )
 
     final_action = decide_action(intables)
     with client:
@@ -100,8 +99,8 @@ def group_adgroups_to_campaigns(iterable_of_adgroups):
     """
     grouped = itertools.groupby(
         sorted(iterable_of_adgroups,
-               key=lambda grp: grp["CampaignId"]),
-        lambda grp: grp["CampaignId"])
+               key=lambda grp: grp["dummy_campaign_id"]),
+        lambda grp: grp["dummy_campaign_id"])
     mapping = {}
     for key, values in grouped:
         mapping[key] = [value["payload"]
@@ -116,11 +115,16 @@ def create_campaigns_and_adgroups(client, path_csv_campaigns, path_csv_adgroups)
     adgroups = group_adgroups_to_campaigns(load_csv_data(path_csv_adgroups))
     for campaign in campaigns:
         campaign_payload = json.loads(campaign['payload'])
-        placeholder_campaign_id = campaign['CampaignId']
+        placeholder_campaign_id = campaign['dummy_campaign_id']
+        logger.info("Creating campaign '%s'", campaign_payload['CampaignName'])
         new_campaign = client.create_campaign(campaign_payload)
         real_campaign_id = new_campaign['CampaignId']
+        logger.info("Success. The CampaignId is '%s'", real_campaign_id)
         related_adgroups = adgroups[placeholder_campaign_id]
         for adgroup in related_adgroups:
             adgroup_payload = json.loads(adgroup['payload'])
             adgroup_payload['CampaignId'] = real_campaign_id
+            logger.info("Creating Adgroups %s for campaign %s",
+                        adgroup_payload['AdGroupName'],
+                        real_campaign_id)
             client.create_adgroup(adgroup_payload)
