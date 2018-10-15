@@ -10,6 +10,7 @@ import os
 import sys
 from functools import partial
 from pathlib import Path
+from typing import Dict, Tuple, List
 
 import voluptuous as vp
 
@@ -109,10 +110,14 @@ def group_adgroups_to_campaigns(iterable_of_adgroups):
     return mapping
 
 
-def create_campaigns_and_adgroups(client, path_csv_campaigns, path_csv_adgroups):
+def create_campaigns_and_adgroups(
+        client,
+        path_csv_campaigns,
+        path_csv_adgroups)-> Tuple[dict, List[dict]]:
     campaigns = load_csv_data(path_csv_campaigns)
     # for now load into memory, there shouldn't be too many of them
     adgroups = group_adgroups_to_campaigns(load_csv_data(path_csv_adgroups))
+    created_adgroups = []
     for campaign in campaigns:
         campaign_payload = json.loads(campaign['payload'])
         placeholder_campaign_id = campaign['dummy_campaign_id']
@@ -127,4 +132,6 @@ def create_campaigns_and_adgroups(client, path_csv_campaigns, path_csv_adgroups)
             logger.info("Creating Adgroups %s for campaign %s",
                         adgroup_payload['AdGroupName'],
                         real_campaign_id)
-            client.create_adgroup(adgroup_payload)
+            new_adgroup = client.create_adgroup(adgroup_payload)
+            created_adgroups.append(new_adgroup)
+    return new_campaign, created_adgroups
