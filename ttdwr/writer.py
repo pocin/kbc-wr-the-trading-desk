@@ -129,9 +129,10 @@ def create_campaigns_and_adgroups(
         for adgroup in related_adgroups:
             adgroup_payload = json.loads(adgroup['payload'])
             adgroup_payload['CampaignId'] = real_campaign_id
-            logger.info("Creating Adgroups %s for campaign %s",
+            logger.info("Creating Adgroup '%s' for campaign %s",
                         adgroup_payload['AdGroupName'],
                         real_campaign_id)
             new_adgroup = client.create_adgroup(adgroup_payload)
+            logger.info("Success: '%s' has ttd adgroup id '%s'", adgroup_payload['AdGroupName'], new_adgroup['AdGroupId'])
             created_adgroups.append(new_adgroup)
     return new_campaign, created_adgroups
