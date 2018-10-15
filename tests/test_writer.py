@@ -47,8 +47,26 @@ def test_grouping_related_adgroups():
     ]
 
     expected = {
-        1: [{"foobar":1}, {"foobar":2}],
-        2: [{"foobar":3}, {"foobar":4}]
+        1: [
+            {
+                "dummy_campaign_id": 1,
+                "payload": {"foobar": 1}
+            },
+            {
+                "dummy_campaign_id": 1,
+                "payload": {"foobar": 2}
+            }
+        ],
+        2: [
+            {
+                "dummy_campaign_id": 2,
+                "payload": {"foobar": 3}
+            },
+            {
+                "dummy_campaign_id": 2,
+                "payload": {"foobar": 4}
+            }
+        ]
     }
 
     mapping = ttdwr.writer.group_adgroups_to_campaigns(raw_data)

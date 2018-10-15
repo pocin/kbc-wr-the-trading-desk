@@ -103,7 +103,7 @@ def group_adgroups_to_campaigns(iterable_of_adgroups):
         lambda grp: grp["dummy_campaign_id"])
     mapping = {}
     for key, values in grouped:
-        mapping[key] = [value["payload"]
+        mapping[key] = [value
                         for value
                         in values]
     return mapping
