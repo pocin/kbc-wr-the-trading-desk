@@ -21,6 +21,7 @@ The writer currently supports these operations.
 - Creating campaigns
 - Creating adgroups
 - Creating campaign immediately followed by creating adgroup for the new id
+- Cloning campaigns based off a campaign template
 
 ## Input table structure
 
@@ -66,6 +67,53 @@ This is what happens under the hood:
 2. All adgroups with the same `dummy_campaign_id` from table `create_adgroups.csv` are fetched.
 3. API request to create the Campaign within TTD is made. The returned (real) `CampaignId` is used instead of the dummy one, when making the requests to create the adgroups.
 
+## Clone campaigns (WIP)
+
+POST: https://api.thetradedesk.com/v3/campaign/clone
+
+### input
+`in/tables/clone_campaigns.csv`
+```csv
+payload,my_id
+{json_payload},foobar
+```
+
+- column "payload" is mandatory and contains the full payload that will be sent
+  to the API
+- you can add as many other columns as you wish, they will be simply copied over
+  to the output table. This can be used to match your internal ID to the newly
+  created TTD id
+
+### output 
+`out/tables/clone_campaigns.csv`
+```csv
+my_id,payload,response
+foobar,{json_payload},response_json}
+```
+where 
+- `my_id` is copied over from input csv (along with all the extra columns)
+- `reference_id` is returned from from the api
+
+##  Put adgroup
+PUT https://api.thetradedesk.com/v3/adgroup
+
+### input
+`in/tables/put_adgroups.csv`
+```csv
+payload[,my_id,any_optional,columns]
+{foo: bar}[,foobar,copied,from_input]
+```
+payload will be used as-is as the payload for the PUT request
+### output
+`out/tables/put_adgroups.csv`
+```csv
+response[,my_id,any_optional,columns]
+{json returned_from_api},foobar,copied_from_input
+```
+
+where
+- `response` is what is returned from the api
+- `my_id,any_optional_columns` is carried over from the input csv
 
 
 # Development

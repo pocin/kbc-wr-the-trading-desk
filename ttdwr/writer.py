@@ -22,6 +22,8 @@ FNAME_ADGROUPS = 'create_adgroups.csv'
 FNAME_CAMPAIGNS = 'create_campaigns.csv'
 FNAME_UPDATE_ADGROUPS = 'update_adgroups.csv'
 FNAME_UPDATE_CAMPAIGNS = 'update_campaigns.csv'
+FNAME_CLONE_CAMPAIGNS = 'clone_campaigns.csv'
+FNAME_PUT_ADGROUPS = 'put_adgroups.csv'
 
 def main(params, datadir):
     _datadir = Path(datadir)
@@ -31,9 +33,10 @@ def main(params, datadir):
     else:
         logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
-    client = TTDClient(login=params['login'],
-                        password=params['#password'],
-                        base_url=params.get("base_url", "https://api.thetradedesk.com/v3/")
+    client = TTDClient(
+        login=params['login'],
+        password=params['#password'],
+        base_url=params.get("base_url", "https://api.thetradedesk.com/v3/")
     )
 
     final_action = decide_action(intables)
@@ -66,12 +69,23 @@ def decide_action(intables: Path):
     elif FNAME_ADGROUPS in tables:
         logger.info("Found only '%s' Will create only adgroups",
                     FNAME_ADGROUPS)
-        return partial(create_adgroups, path_to_csv=intables / FNAME_ADGROUPS)
+        return partial(create_adgroups,
+                       path_to_csv=intables / FNAME_ADGROUPS)
 
     elif FNAME_CAMPAIGNS in tables:
         logger.info("Found only '%s' Will create only campaigns",
                     FNAME_CAMPAIGNS)
-        return partial(create_campaigns, path_to_csv=intables / FNAME_CAMPAIGNS)
+        return partial(create_campaigns,
+                       path_to_csv=intables / FNAME_CAMPAIGNS)
+
+    elif FNAME_CLONE_CAMPAIGNS in tables:
+        logger.info("Found %s, cloning campaigns", FNAME_CLONE_CAMPAIGNS)
+        return partial(clone_campaigns,
+                       path_to_csv=intables / FNAME_CLONE_CAMPAIGNS)
+    elif FNAME_PUT_ADGROUPS in tables:
+        logger.info("Found %s, putting adgroups", FNAME_PUT_ADGROUPS)
+        return partial(put_adgroups,
+                       path_to_csv=intables / FNAME_PUT_ADGROUPS)
     else:
         raise ttdwr.exceptions.TTDInternalError(
             "Don't know what action to perform. Found tables '{}'".format(
@@ -105,6 +119,56 @@ def create_campaigns(client, path_to_csv):
             raise
         logger.info("Success: Created '%s' as AdGroupId= '%s'",
                     payload['CampaignName'], new_campaign['CampaignId'])
+
+
+def stream_to_csv(outpath, stream, columns=None):
+    with open(outpath, 'w') as outf:
+        wr = csv.DictWriter(outf, fieldnames=columns)
+        wr.writerows(stream)
+    return outpath
+
+def _peek_at_header(path_csv):
+    with open(path_csv) as f:
+        return csv.DictReader(f).fieldnames
+
+
+def clone_campaigns(client, path_to_csv, outdir):
+    outpath = Path(outdir) / 'clone_campaigns.csv'
+    header = _peek_at_header(path_to_csv)
+
+    with open(outpath, 'w') as outf:
+        wr = csv.DictWriter(outf, fieldnames=header + ['response'])
+        wr.writeheader()
+        for campaign in load_csv_data(path_to_csv):
+            resp = client.post('/campaign/clone',
+                               json=json.loads(campaign['payload']))
+            logger.info("row %s created with reference_id %s",
+                        {
+                            k: v
+                            for k, v
+                            in campaign.items()
+                            if k != 'payload'
+                        },
+                        resp['ReferenceId']
+                        )
+            campaign['response'] = json.dumps(resp)
+            wr.writerow(campaign)
+    return outpath
+
+def put_adgroups(client, path_to_csv, datadir):
+    outpath = datadir / 'out/tables/put_adgroups.csv'
+    header = _peek_at_header(path_to_csv)
+    with open(outpath, 'w') as outf:
+        wr = csv.DictWriter(outf, fieldnames=header + ['response'])
+        wr.writeheader()
+
+        for adgroup in load_csv_data(path_to_csv):
+            resp = client.put('/adgroup',
+                              json=json.loads(adgroup['payload']))
+            adgroup['response'] = json.dumps(resp)
+            wr.writerow(adgroup)
+    return outpath
+
 
 def group_adgroups_to_campaigns(iterable_of_adgroups):
     """convert an iterable of {"campaign_id": .., "payload": ...} into
