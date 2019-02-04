@@ -86,12 +86,26 @@ def load_csv_data(path_to_csv):
 def create_adgroups(client, path_to_csv):
     for adgrp in load_csv_data(path_to_csv):
         payload = json.loads(adgrp['payload'])
-        client.create_adgroup(payload)
+        logger.info("Creating adgroup %s", payload['AdGroupName'])
+        try:
+            new_adgrp = client.create_adgroup(payload)
+        except:
+            logger.info("payload was\n:%s", json.dumps(payload))
+            raise
+        logger.info("Success: Created '%s' as AdGroupId= '%s'",
+                    payload['AdGroupName'], new_adgrp['AdGroupId'])
 
 def create_campaigns(client, path_to_csv):
     for campaign in load_csv_data(path_to_csv):
         payload = json.loads(campaign['payload'])
-        client.create_campaign(payload)
+        logger.info("Creating Campaign %s", payload['CampaignName'])
+        try:
+            new_campaign = client.create_campaign(payload)
+        except:
+            logger.info("payload was\n:%s", json.dumps(payload))
+            raise
+        logger.info("Success: Created '%s' as AdGroupId= '%s'",
+                    payload['CampaignName'], new_campaign['CampaignId'])
 
 def group_adgroups_to_campaigns(iterable_of_adgroups):
     """convert an iterable of {"campaign_id": .., "payload": ...} into
@@ -132,7 +146,11 @@ def create_campaigns_and_adgroups(
             logger.info("Creating Adgroup '%s' for campaign %s",
                         adgroup_payload['AdGroupName'],
                         real_campaign_id)
-            new_adgroup = client.create_adgroup(adgroup_payload)
+            try:
+                new_adgroup = client.create_adgroup(adgroup_payload)
+            except:
+                logger.info("Error, Payload was\n%s", json.dumps(adgroup_payload))
+                raise
             logger.info("Success: '%s' has ttd adgroup id '%s'", adgroup_payload['AdGroupName'], new_adgroup['AdGroupId'])
             created_adgroups.append(new_adgroup)
     return new_campaign, created_adgroups
