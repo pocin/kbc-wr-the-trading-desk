@@ -14,7 +14,7 @@ def test_creating_campaigns_and_adgroups(tmpdir, create_campaigns_adgroups_csvs)
         def create_adgroup(self, payload):
             return {
                 "CampaignId": payload["CampaignId"],
-                "AdgroupId": next(self.adgroup_ids)
+                "AdGroupId": next(self.adgroup_ids)
             }
 
 
@@ -25,5 +25,5 @@ def test_creating_campaigns_and_adgroups(tmpdir, create_campaigns_adgroups_csvs)
         path_adgroups)
     assert campaign['CampaignId']
     for i, adgrp in enumerate(adgroups):
-        assert adgrp['AdgroupId'] == 'a{}'.format(i)
+        assert adgrp['AdGroupId'] == 'a{}'.format(i)
 

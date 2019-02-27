@@ -55,6 +55,7 @@ def validate_config(params):
 
 
 def decide_action(intables: Path):
+    intables = Path(intables)
     tables = set(os.listdir(str(intables)))
     if FNAME_ADGROUPS in tables and FNAME_CAMPAIGNS in tables:
         logger.info("Found both '%s' and '%s'. "
