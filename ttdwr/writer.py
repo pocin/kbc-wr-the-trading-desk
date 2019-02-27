@@ -39,7 +39,7 @@ def main(params, datadir):
         base_url=params.get("base_url", "https://api.thetradedesk.com/v3/")
     )
 
-    final_action = decide_action(intables)
+    final_action = decide_action(_datadir)
     with client:
         final_action(client=client)
 
@@ -54,8 +54,9 @@ def validate_config(params):
     return schema(params)
 
 
-def decide_action(intables: Path):
-    intables = Path(intables)
+def decide_action(datadir: Path):
+    intables = datadir / 'in/tables'
+    outtables = datadir / 'out/tables'
     tables = set(os.listdir(str(intables)))
     if FNAME_ADGROUPS in tables and FNAME_CAMPAIGNS in tables:
         logger.info("Found both '%s' and '%s'. "
@@ -82,11 +83,13 @@ def decide_action(intables: Path):
     elif FNAME_CLONE_CAMPAIGNS in tables:
         logger.info("Found %s, cloning campaigns", FNAME_CLONE_CAMPAIGNS)
         return partial(clone_campaigns,
-                       path_to_csv=intables / FNAME_CLONE_CAMPAIGNS)
+                       path_to_csv=intables / FNAME_CLONE_CAMPAIGNS,
+                       outdir=outtables)
     elif FNAME_PUT_ADGROUPS in tables:
         logger.info("Found %s, putting adgroups", FNAME_PUT_ADGROUPS)
         return partial(put_adgroups,
-                       path_to_csv=intables / FNAME_PUT_ADGROUPS)
+                       path_to_csv=intables / FNAME_PUT_ADGROUPS,
+                       outdir=outtables)
     else:
         raise ttdwr.exceptions.TTDInternalError(
             "Don't know what action to perform. Found tables '{}'".format(
@@ -156,8 +159,9 @@ def clone_campaigns(client, path_to_csv, outdir):
             wr.writerow(campaign)
     return outpath
 
-def put_adgroups(client, path_to_csv, datadir):
-    outpath = datadir / 'out/tables/put_adgroups.csv'
+
+def put_adgroups(client, path_to_csv, outdir):
+    outpath = outdir / 'put_adgroups.csv'
     header = _peek_at_header(path_to_csv)
     with open(outpath, 'w') as outf:
         wr = csv.DictWriter(outf, fieldnames=header + ['response'])
