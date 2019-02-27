@@ -55,6 +55,7 @@ def validate_config(params):
 
 
 def decide_action(datadir: Path):
+    datadir = Path(datadir)
     intables = datadir / 'in/tables'
     outtables = datadir / 'out/tables'
     tables = set(os.listdir(str(intables)))
