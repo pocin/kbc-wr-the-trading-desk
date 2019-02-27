@@ -15,5 +15,7 @@ if __name__ == "__main__":
         main(params, datadir)
     except (ValueError, KeyError, requests.HTTPError, TTDApiError, TTDApiPermissionsError) as err:
         logging.exception("Something went wrong:")
+        sys.exit(1)
     except:
         logging.exception("Internal error")
+        sys.exit(2)
