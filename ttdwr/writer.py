@@ -174,12 +174,7 @@ def clone_campaigns(client, path_to_csv, outdir, do_not_fail=False):
             else:
                 logger.info(
                     "row %s created with reference_id %s",
-                    {
-                        k: v
-                        for k, v
-                        in campaign.items()
-                        if k != 'payload'
-                    },
+                    _log_row,
                     resp['ReferenceId']
                         )
             campaign['response'] = json.dumps(resp)
