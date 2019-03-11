@@ -15,6 +15,7 @@ import voluptuous as vp
 
 import ttdwr
 from ttdapi.client import TTDClient
+from ttdapi.exceptions import TTDApiError
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ def main(params, datadir):
         base_url=params.get("base_url", "https://api.thetradedesk.com/v3/")
     )
 
-    final_action = decide_action(_datadir)
+    final_action = decide_action(_datadir, params)
     with client:
         final_action(client=client)
 
@@ -50,11 +51,12 @@ def validate_config(params):
         "#password": str,
         vp.Optional("debug"): bool,
         "base_url": str,
+        vp.Optional("do_not_fail"): bool
     })
     return schema(params)
 
 
-def decide_action(datadir: Path):
+def decide_action(datadir: Path, params: dict):
     datadir = Path(datadir)
     intables = datadir / 'in/tables'
     outtables = datadir / 'out/tables'
@@ -85,7 +87,8 @@ def decide_action(datadir: Path):
         logger.info("Found %s, cloning campaigns", FNAME_CLONE_CAMPAIGNS)
         return partial(clone_campaigns,
                        path_to_csv=intables / FNAME_CLONE_CAMPAIGNS,
-                       outdir=outtables)
+                       outdir=outtables,
+                       do_not_fail=params.get('do_not_fail', False))
     elif FNAME_PUT_ADGROUPS in tables:
         logger.info("Found %s, putting adgroups", FNAME_PUT_ADGROUPS)
         return partial(put_adgroups,
@@ -137,7 +140,7 @@ def _peek_at_header(path_csv):
         return csv.DictReader(f).fieldnames
 
 
-def clone_campaigns(client, path_to_csv, outdir):
+def clone_campaigns(client, path_to_csv, outdir, do_not_fail=False):
     outpath = Path(outdir) / 'clone_campaigns.csv'
     header = _peek_at_header(path_to_csv)
 
@@ -145,16 +148,39 @@ def clone_campaigns(client, path_to_csv, outdir):
         wr = csv.DictWriter(outf, fieldnames=header + ['response'])
         wr.writeheader()
         for campaign in load_csv_data(path_to_csv):
-            resp = client.post('/campaign/clone',
-                               json=json.loads(campaign['payload']))
-            logger.info("row %s created with reference_id %s",
-                        {
-                            k: v
-                            for k, v
-                            in campaign.items()
-                            if k != 'payload'
-                        },
-                        resp['ReferenceId']
+            # a helper variable to prettify logging output
+            _log_row = {
+                k: v
+                for k, v
+                in campaign.items()
+                if k != 'payload'
+            }
+            try:
+                resp = client.post('/campaign/clone',
+                                   json=json.loads(campaign['payload']))
+            except TTDApiError as err:
+                # A failover mechanism that enables the extractor
+                # to finish (and output csvs with previously created )
+                if do_not_fail:
+                    logger.info(
+                        ("row %s returned error '%s'. Logging and continuing,"
+                         " since do_not_fail=True"),
+                        _log_row,
+                        err
+                    )
+                    resp = err.response.json()
+                else:
+                    raise
+            else:
+                logger.info(
+                    "row %s created with reference_id %s",
+                    {
+                        k: v
+                        for k, v
+                        in campaign.items()
+                        if k != 'payload'
+                    },
+                    resp['ReferenceId']
                         )
             campaign['response'] = json.dumps(resp)
             wr.writerow(campaign)
@@ -169,8 +195,9 @@ def put_adgroups(client, path_to_csv, outdir):
         wr.writeheader()
 
         for adgroup in load_csv_data(path_to_csv):
-            resp = client.put('/adgroup',
-                              json=json.loads(adgroup['payload']))
+            resp = client.put(
+                '/adgroup',
+                json=json.loads(adgroup['payload']))
             adgroup['response'] = json.dumps(resp)
             wr.writerow(adgroup)
     return outpath

@@ -67,11 +67,12 @@ This is what happens under the hood:
 2. All adgroups with the same `dummy_campaign_id` from table `create_adgroups.csv` are fetched.
 3. API request to create the Campaign within TTD is made. The returned (real) `CampaignId` is used instead of the dummy one, when making the requests to create the adgroups.
 
-## Clone campaigns (WIP)
+## Clone campaigns
 
 POST: https://api.thetradedesk.com/v3/campaign/clone
 
 ### input
+#### tables
 `in/tables/clone_campaigns.csv`
 ```csv
 payload,my_id
@@ -83,6 +84,15 @@ payload,my_id
 - you can add as many other columns as you wish, they will be simply copied over
   to the output table. This can be used to match your internal ID to the newly
   created TTD id
+#### `config.json`
+In addition to the standard fields, you can add 
+```
+{
+   "do_not_fail": True
+}
+```
+to the config.json. This enables the writer to continue when a clone request fails. Logs the error response into the `response` column and finishes successfully. This is useful if you get 400/500 error in the middle of processing of the csv to save the already created reference ids (otherwise you would have to fish them out of the logs manually). The option defaults to `False` if omitted
+
 
 ### output 
 `out/tables/clone_campaigns.csv`
