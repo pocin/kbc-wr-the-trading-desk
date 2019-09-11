@@ -3,6 +3,7 @@ KBC Related stuff
 
 """
 import csv
+import time
 import itertools
 import json
 import logging
@@ -190,10 +191,21 @@ def put_adgroups(client, path_to_csv, outdir):
         wr.writeheader()
 
         for adgroup in load_csv_data(path_to_csv):
-            resp = client.put(
-                '/adgroup',
-                json=json.loads(adgroup['payload']))
-            adgroup['response'] = json.dumps(resp)
+            logger.info("Putting OrderItemNumber %s AdGroupId %s",
+                        adgroup['OrderItemNumber'], adgroup['AdGroupId'])
+            while True:
+                try:
+                    resp = client.put(
+                        '/adgroup',
+                        json=json.loads(adgroup['payload']))
+                    adgroup['response'] = json.dumps(resp)
+                    break
+                except TTDApiError as err:
+                    if err.response.status_code == 429:
+                        logger.info("Sleeping for 5s because too many requests")
+                        time.sleep(5)
+                    else:
+                        raise
             wr.writerow(adgroup)
     return outpath
 
